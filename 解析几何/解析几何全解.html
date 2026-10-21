@@ -1,0 +1,2086 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>解析几何 · 全知识点 + 原题题库</title>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['$$','$$'], ['\\[','\\]']],
+    processEscapes: true,
+    tags: 'none'
+  },
+  options: {
+    skipHtmlTags: ['script','noscript','style','textarea','pre','code'],
+    ignoreHtmlClass: 'no-mathjax'
+  },
+  chtml: { scale: 1.02, displayAlign: 'center', displayIndent: '0' },
+  startup: { pageReady: () => MathJax.startup.defaultPageReady() }
+};
+</script>
+<script>
+(function () {
+  var srcs = [
+    'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js',
+    'https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js',
+    'https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js'
+  ];
+  var i = 0;
+  function next() {
+    if (i >= srcs.length) {
+      var w = document.getElementById('mathwarn');
+      if (w) w.classList.add('show');
+      var b = document.getElementById('mathbadge');
+      if (b) { b.textContent = '公式渲染：离线'; b.className = 'badge warn'; }
+      return;
+    }
+    var s = document.createElement('script');
+    s.src = srcs[i++];
+    s.async = true;
+    s.onload = function () {
+      if (window.MathJax && MathJax.startup && MathJax.startup.promise) {
+        MathJax.startup.promise.then(function () {
+          var b = document.getElementById('mathbadge');
+          if (b) { b.textContent = '公式渲染：就绪'; b.className = 'badge ok'; }
+        });
+      }
+    };
+    s.onerror = next;
+    document.head.appendChild(s);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', next);
+  } else { next(); }
+})();
+</script>
+
+<style>
+:root{
+  --bg:#f5f5f2; --bg2:#ffffff; --fg:#1b1b1f; --fg2:#55555f; --fg3:#8a8a95;
+  --line:#e2e2dd; --line2:#efefeb;
+  --accent:#1d6fd0; --accent-soft:#e8f1fc;
+  --thm:#0f766e; --thm-bg:#effaf8;
+  --warn:#b45309; --warn-bg:#fff7ed;
+  --ex:#7c3aed; --ex-bg:#f6f2ff;
+  --ok:#15803d; --ok-bg:#f0fdf4;
+  --shadow:0 1px 2px rgba(20,20,30,.05), 0 6px 18px -10px rgba(20,20,30,.18);
+  --radius:12px;
+  --mono:"Cascadia Mono","JetBrains Mono",Consolas,"Courier New",monospace;
+}
+html[data-theme="dark"]{
+  --bg:#15161a; --bg2:#1d1f24; --fg:#e8e8ee; --fg2:#a9aab5; --fg3:#71727e;
+  --line:#2c2e35; --line2:#24262c;
+  --accent:#5aa9f5; --accent-soft:#16283c;
+  --thm:#4fd1c5; --thm-bg:#122a28;
+  --warn:#f0b357; --warn-bg:#2a2114;
+  --ex:#b794f6; --ex-bg:#231a33;
+  --ok:#68d391; --ok-bg:#152a1c;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; scroll-padding-top:74px}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:15.5px; line-height:1.85;
+  -webkit-font-smoothing:antialiased;
+}
+/* ── 顶栏 ── */
+#topbar{
+  position:fixed; top:0; left:0; right:0; height:52px; z-index:60;
+  background:color-mix(in srgb, var(--bg2) 88%, transparent);
+  backdrop-filter:saturate(180%) blur(12px);
+  border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:10px; padding:0 14px;
+}
+#topbar .brand{font-weight:700; letter-spacing:.3px; white-space:nowrap}
+#topbar .brand small{font-weight:400; color:var(--fg3); margin-left:6px; font-size:12px}
+#search{
+  flex:1; max-width:420px; height:34px; border-radius:999px;
+  border:1px solid var(--line); background:var(--bg);
+  color:var(--fg); padding:0 14px; font-size:14px; outline:none;
+}
+#search:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
+.spacer{flex:1}
+.btn{
+  height:32px; padding:0 12px; border-radius:8px; cursor:pointer;
+  border:1px solid var(--line); background:var(--bg2); color:var(--fg2);
+  font-size:13px; font-family:inherit; white-space:nowrap;
+  display:inline-flex; align-items:center; gap:5px;
+}
+.btn:hover{color:var(--accent); border-color:var(--accent)}
+#progress{position:fixed; top:52px; left:0; height:2px; width:0; background:var(--accent); z-index:61; transition:width .1s}
+#mathwarn{display:none; background:var(--warn-bg); color:var(--warn); border-bottom:1px solid var(--line);
+  padding:8px 16px; font-size:13.5px; position:fixed; top:52px; left:0; right:0; z-index:59}
+#mathwarn.show{display:block}
+/* ── 布局 ── */
+#wrap{display:grid; grid-template-columns:268px minmax(0,1fr); max-width:1500px; margin:0 auto; padding-top:54px}
+#side{
+  position:sticky; top:54px; height:calc(100vh - 54px); overflow-y:auto;
+  border-right:1px solid var(--line); padding:16px 10px 60px 16px;
+}
+#side::-webkit-scrollbar{width:8px}
+#side::-webkit-scrollbar-thumb{background:var(--line); border-radius:8px}
+#side h4{margin:16px 0 6px; font-size:11.5px; letter-spacing:1.2px; color:var(--fg3); text-transform:uppercase; font-weight:600}
+#side h4:first-child{margin-top:0}
+#side a{
+  display:block; padding:5px 9px; border-radius:7px; color:var(--fg2);
+  text-decoration:none; font-size:13.5px; line-height:1.5; border-left:2px solid transparent;
+}
+#side a:hover{background:var(--line2); color:var(--fg)}
+#side a.on{background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); font-weight:600}
+#side a.sub{padding-left:20px; font-size:13px; color:var(--fg3)}
+main{padding:26px 40px 140px; min-width:0}
+/* ── 标题 ── */
+h1{font-size:29px; margin:6px 0 4px; letter-spacing:-.4px; line-height:1.35}
+.subtitle{color:var(--fg3); font-size:14px; margin-bottom:26px}
+h2{
+  font-size:21px; margin:46px 0 14px; padding:10px 0 10px 14px;
+  border-left:4px solid var(--accent); background:linear-gradient(90deg,var(--accent-soft),transparent 65%);
+  border-radius:0 8px 8px 0; scroll-margin-top:70px;
+}
+h3{font-size:17px; margin:30px 0 8px; padding-bottom:6px; border-bottom:1px solid var(--line2); scroll-margin-top:70px}
+h4{font-size:15px; margin:18px 0 6px; color:var(--fg)}
+p{margin:9px 0}
+ul,ol{margin:9px 0; padding-left:24px}
+li{margin:4px 0}
+code{font-family:var(--mono); background:var(--line2); padding:1px 5px; border-radius:4px; font-size:13.5px}
+a.ref{color:var(--accent); text-decoration:none; border-bottom:1px dashed var(--accent); font-size:12.5px; white-space:nowrap}
+a.ref:hover{border-bottom-style:solid}
+/* ── 卡片 ── */
+.kp, .q{
+  background:var(--bg2); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px 20px 18px; margin:16px 0; box-shadow:var(--shadow); scroll-margin-top:70px;
+}
+.kp > h3:first-child, .kp > h4:first-child{margin-top:2px}
+.kp[data-kind="thm"]{border-left:3px solid var(--thm)}
+.kp[data-kind="formula"]{border-left:3px solid var(--accent)}
+.kp[data-kind="warn"]{border-left:3px solid var(--warn)}
+.kp[data-kind="ex"]{border-left:3px solid var(--ex)}
+.tagline{display:flex; flex-wrap:wrap; gap:6px; margin:2px 0 10px}
+.tag{font-size:11.5px; padding:2px 8px; border-radius:999px; background:var(--line2); color:var(--fg3); letter-spacing:.2px}
+.tag.thm{background:var(--thm-bg); color:var(--thm)}
+.tag.formula{background:var(--accent-soft); color:var(--accent)}
+.tag.warn{background:var(--warn-bg); color:var(--warn)}
+.tag.ex{background:var(--ex-bg); color:var(--ex)}
+.tag.ok{background:var(--ok-bg); color:var(--ok)}
+.box{border-radius:9px; padding:10px 15px; margin:12px 0; font-size:14.6px}
+.box.thm{background:var(--thm-bg); border-left:3px solid var(--thm)}
+.box.warn{background:var(--warn-bg); border-left:3px solid var(--warn)}
+.box.tip{background:var(--accent-soft); border-left:3px solid var(--accent)}
+.box.ex{background:var(--ex-bg); border-left:3px solid var(--ex)}
+.box b{color:inherit}
+details.fold{margin:12px 0; border:1px dashed var(--line); border-radius:9px; padding:2px 14px; background:transparent}
+details.fold > summary{cursor:pointer; padding:8px 0; font-size:14px; color:var(--accent); font-weight:600; list-style:none; user-select:none}
+details.fold > summary::-webkit-details-marker{display:none}
+details.fold > summary::before{content:"▸ "; display:inline-block; transition:transform .15s}
+details.fold[open] > summary::before{content:"▾ "}
+details.fold > summary:hover{color:var(--fg)}
+details.fold > *:not(summary){padding-bottom:6px}
+table{border-collapse:collapse; width:100%; margin:14px 0; font-size:14px; background:var(--bg2)}
+th,td{border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top}
+th{background:var(--line2); font-weight:600; white-space:nowrap}
+tbody tr:hover{background:var(--line2)}
+.tw{overflow-x:auto}
+kbd{font-family:var(--mono); font-size:12px; border:1px solid var(--line); border-bottom-width:2px;
+  border-radius:5px; padding:1px 5px; background:var(--bg2); color:var(--fg2)}
+.hidden{display:none !important}
+mark{background:#fde68a; color:#1b1b1f; border-radius:3px; padding:0 2px}
+html[data-theme="dark"] mark{background:#7a5c12; color:#fff}
+#count{font-size:12.5px; color:var(--fg3); white-space:nowrap; min-width:74px; text-align:right}
+#toTop{
+  position:fixed; right:22px; bottom:22px; width:42px; height:42px; border-radius:50%;
+  border:1px solid var(--line); background:var(--bg2); color:var(--fg2); cursor:pointer;
+  box-shadow:var(--shadow); font-size:17px; display:none; z-index:50;
+}
+#toTop.show{display:block}
+#toTop:hover{color:var(--accent); border-color:var(--accent)}
+/* ── 题库 ── */
+.q{position:relative; padding-left:22px}
+.q .qhead{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:7px}
+.qid{font-family:var(--mono); font-weight:700; font-size:13.5px; color:var(--accent);
+  background:var(--accent-soft); padding:2px 9px; border-radius:6px; letter-spacing:.3px}
+.qtag{font-size:12px; color:var(--fg3)}
+.qscore{font-size:12px; color:var(--ok); background:var(--ok-bg); padding:1px 8px; border-radius:999px}
+.qscore.none{color:var(--fg3); background:var(--line2)}
+.qbody{font-size:15px}
+.chips{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 22px}
+.chip{
+  cursor:pointer; user-select:none; font-size:13px; padding:5px 13px; border-radius:999px;
+  border:1px solid var(--line); background:var(--bg2); color:var(--fg2);
+}
+.chip:hover{border-color:var(--accent); color:var(--accent)}
+.chip.on{background:var(--accent); border-color:var(--accent); color:#fff}
+.srcdiv{
+  margin:34px 0 6px; font-size:14px; font-weight:700; color:var(--fg2);
+  padding-left:12px; border-left:3px solid var(--line); letter-spacing:.3px;
+}
+/* ── 打印 ── */
+@media print{
+  #topbar,#side,#toTop,#progress,#mathwarn{display:none !important}
+  #wrap{display:block; padding-top:0}
+  main{padding:0}
+  body{background:#fff; font-size:11.5pt}
+  .kp,.q{box-shadow:none; break-inside:avoid; page-break-inside:avoid; border-color:#bbb}
+  h2{break-before:page; page-break-before:always}
+  details.fold{border-color:#bbb}
+  details.fold > summary{color:#000}
+  details.fold[open] > summary{}
+}
+@media (max-width:940px){
+  #wrap{grid-template-columns:1fr}
+  #side{display:none}
+  main{padding:20px 16px 120px}
+  #topbar .brand small{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="brand">解析几何 <small>全知识点 · 不含射影几何</small></div>
+  <input id="search" type="search" placeholder="搜知识点 / 公式 / 题号 …（试试：直母线、不变量、B26-9）">
+  <span id="count"></span>
+  <div class="spacer"></div>
+  <span id="mathbadge" class="badge tag">公式渲染：加载中…</span>
+  <button class="btn" id="expandAll">展开推导</button>
+  <button class="btn" id="printBtn">打印</button>
+  <button class="btn" id="themeBtn">🌙 暗色</button>
+</div>
+<div id="progress"></div>
+<div id="mathwarn">
+  ⚠️ 公式库（MathJax）没能从 CDN 加载。文字内容不受影响，但 $…$ 里的公式会显示成源码。
+  联网后刷新即可；或把 <code>tex-mml-chtml.js</code> 放到同目录改成离线引用。
+</div>
+
+<div id="wrap">
+
+<nav id="side">
+  <h4>向量代数</h4>
+  <a href="#c1">1　向量代数</a>
+  <h4>平面与直线</h4>
+  <a href="#c2">2　平面</a>
+  <a href="#c3">3　空间直线</a>
+  <h4>曲面</h4>
+  <a href="#c4">4　曲面与空间曲线</a>
+  <a href="#c5">5　二次曲面</a>
+  <h4>二次曲线与化简</h4>
+  <a href="#c6">6　平面二次曲线</a>
+  <a href="#c7">7　坐标变换与二次曲面化简</a>
+  <h4>变换</h4>
+  <a href="#c8">8　等距变换与仿射变换</a>
+  <h4>附录</h4>
+  <a href="#c9">9　公式速查表</a>
+  <a href="#c10">10　原题题库（37 题）</a>
+  <a href="#c10" class="sub">索引表 / 抽题训练</a>
+</nav>
+
+<main>
+
+<h1>解析几何 · 全知识点</h1>
+<div class="subtitle">
+  覆盖：向量代数 · 平面与直线 · 曲面与空间曲线 · 二次曲面 · 平面二次曲线 · 坐标变换与化简 · 等距与仿射变换。
+  <br><b>不含射影几何</b>（无穷远元素、射影平面、交比、射影变换、极点极线等内容未收录）。
+  末章附 <a class="ref" href="#c10">原题题库 37 题</a>。
+</div>
+
+<div class="box tip">
+  <b>怎么用这份材料：</b>
+  ① 顶栏搜索框直接敲关键词，比如 <code>双重外积</code>、<code>不变量</code>、<code>母线</code>、<code>B26-9</code>，会就地过滤；
+  ② 带 <span class="tag ex">例</span> 的卡片是套路演示，<span class="tag warn">易错</span> 是丢分点；
+  ③ 折叠块（▸）是推导过程，做题卡住再展开；
+  ④ 每节末尾的 <span class="tag">真题</span> 链接跳到题库对应题。
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="c1">1　向量代数</h2>
+
+<article class="kp" data-kind="formula">
+<h3>1.1　向量的概念与线性运算</h3>
+<div class="tagline"><span class="tag formula">基础</span><span class="tag">定义</span></div>
+<p><b>向量</b>：既有大小又有方向的量，记 $\vec a=\overrightarrow{AB}$。大小（模）记 $|\vec a|$。模为 $1$ 的叫<b>单位向量</b>，模为 $0$ 的叫<b>零向量</b> $\vec 0$（方向任意）。与 $\vec a$ 同向的单位向量记 $\vec a^{\,0}=\dfrac{\vec a}{|\vec a|}$。</p>
+<p><b>加减法</b>：三角形法则 / 平行四边形法则。$\vec a-\vec b=\vec a+(-\vec b)$。</p>
+<p><b>数乘</b>：$\lambda\vec a$，$|\lambda\vec a|=|\lambda|\,|\vec a|$；$\lambda>0$ 同向，$\lambda<0$ 反向。</p>
+<div class="box thm">
+<b>共线（平行）</b>：$\vec a\parallel\vec b\iff$ 存在不全为零的 $\lambda,\mu$ 使 $\lambda\vec a+\mu\vec b=\vec 0\iff \vec a\times\vec b=\vec 0$（非零向量时 $\vec a=\lambda\vec b$）。
+<br><b>共面</b>：$\vec a,\vec b,\vec c$ 共面 $\iff$ $(\vec a,\vec b,\vec c)=0$（混合积为零）。
+</div>
+<p><b>线性组合与线性相关</b>：一组向量线性相关 $\iff$ 其中一个可由其余线性表示 $\iff$ 存在非平凡的零组合。空间中<b>三个向量线性相关 $\iff$ 共面</b>；少于三个时相关 $\iff$ 共线。</p>
+<div class="box tip">
+<b>仿射坐标系下的线性运算</b>：设 $\vec a=(x_1,y_1,z_1)$，$\vec b=(x_2,y_2,z_2)$，则
+$\vec a\pm\vec b=(x_1\pm x_2,\;y_1\pm y_2,\;z_1\pm z_2)$，$\lambda\vec a=(\lambda x_1,\lambda y_1,\lambda z_1)$。
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>1.2　坐标系与向量的坐标</h3>
+<div class="tagline"><span class="tag formula">基础</span></div>
+<p><b>仿射坐标系</b>：原点 $O$ + 三个不共面的基向量 $\vec e_1,\vec e_2,\vec e_3$。点 $M$ 的坐标 $(x,y,z)$ 由 $\overrightarrow{OM}=x\vec e_1+y\vec e_2+z\vec e_3$ 确定。</p>
+<p><b>直角坐标系</b>：基向量为两两垂直的单位向量 $\vec i,\vec j,\vec k$（右手系）。</p>
+<p><b>两点距离</b>（直角坐标）：$|\overrightarrow{M_1M_2}|=\sqrt{(x_2-x_1)^2+(y_2-y_1)^2+(z_2-z_1)^2}$。</p>
+<p><b>定比分点</b>：$M$ 使 $\overrightarrow{M_1M}=\lambda\overrightarrow{MM_2}$，则
+$$M=\left(\frac{x_1+\lambda x_2}{1+\lambda},\ \frac{y_1+\lambda y_2}{1+\lambda},\ \frac{z_1+\lambda z_2}{1+\lambda}\right),\quad \lambda\ne-1.$$
+$\lambda=1$ 即中点 $\left(\frac{x_1+x_2}{2},\frac{y_1+y_2}{2},\frac{z_1+z_2}{2}\right)$。</p>
+<div class="box warn">
+<b>易错</b>：仿射坐标系下距离、夹角公式<b>不成立</b>（那只对直角坐标系有效）。仿射坐标系里能谈的是共线、共面、平行、比值、面积比这类<b>仿射性质</b>。
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>1.3　数量积（内积 / 点积）</h3>
+<div class="tagline"><span class="tag formula">核心</span><span class="tag">真题</span></div>
+<p><b>定义</b>：$\vec a\cdot\vec b=|\vec a||\vec b|\cos\langle\vec a,\vec b\rangle$。</p>
+<p><b>坐标式</b>：$\vec a\cdot\vec b=x_1x_2+y_1y_2+z_1z_2$（仅直角坐标）。</p>
+<p><b>基本性质</b>：交换律 $\vec a\cdot\vec b=\vec b\cdot\vec a$；分配律 $\vec a\cdot(\vec b+\vec c)=\vec a\cdot\vec b+\vec a\cdot\vec c$；$(\lambda\vec a)\cdot\vec b=\lambda(\vec a\cdot\vec b)$；$\vec a\cdot\vec a=|\vec a|^2$。</p>
+<div class="box thm">
+<b>核心用途四条</b>
+<ul>
+<li><b>求模</b>：$|\vec a|=\sqrt{\vec a\cdot\vec a}$。</li>
+<li><b>求夹角</b>：$\cos\langle\vec a,\vec b\rangle=\dfrac{\vec a\cdot\vec b}{|\vec a||\vec b|}$。</li>
+<li><b>判垂直</b>：$\vec a\perp\vec b\iff \vec a\cdot\vec b=0$（$\vec a,\vec b\ne\vec 0$）。</li>
+<li><b>求投影</b>：$\operatorname{Prj}_{\vec a}\vec b=|\vec b|\cos\langle\vec a,\vec b\rangle=\dfrac{\vec a\cdot\vec b}{|\vec a|}$；投影向量 $\dfrac{\vec a\cdot\vec b}{\vec a\cdot\vec a}\vec a$。</li>
+</ul>
+</div>
+<div class="box tip">
+<b>柯西不等式</b>（由 $\cos$ 有界）：$|\vec a\cdot\vec b|\le|\vec a||\vec b|$，等号 $\iff$ 共线。
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>1.4　向量积（外积 / 叉积）</h3>
+<div class="tagline"><span class="tag formula">核心</span><span class="tag">真题</span></div>
+<p><b>定义</b>：$\vec a\times\vec b$ 是一个向量，模 $|\vec a\times\vec b|=|\vec a||\vec b|\sin\langle\vec a,\vec b\rangle$，方向同时垂直于 $\vec a,\vec b$ 且 $\vec a,\vec b,\vec a\times\vec b$ 成右手系。</p>
+<p><b>坐标式</b>（直角坐标）：
+$$\vec a\times\vec b=
+\begin{vmatrix}
+\vec i & \vec j & \vec k\\
+x_1 & y_1 & z_1\\
+x_2 & y_2 & z_2
+\end{vmatrix}
+=\bigl(y_1z_2-z_1y_2,\; z_1x_2-x_1z_2,\; x_1y_2-y_1x_2\bigr).$$</p>
+<div class="box thm">
+<b>性质</b>
+<ul>
+<li><b>反交换</b>：$\vec a\times\vec b=-\vec b\times\vec a$（<b>不能交换顺序</b>）。</li>
+<li>$\vec a\times\vec a=\vec 0$；$\vec a\times\vec 0=\vec 0$。</li>
+<li>分配律：$\vec a\times(\vec b+\vec c)=\vec a\times\vec b+\vec a\times\vec c$。</li>
+<li>$\vec a\parallel\vec b\iff \vec a\times\vec b=\vec 0$。</li>
+<li>$|\vec a\times\vec b|$ ＝ 以 $\vec a,\vec b$ 为邻边的<b>平行四边形面积</b>；三角形面积为 $\frac12|\vec a\times\vec b|$。</li>
+<li>$\vec a\times\vec b$ 是 $\vec a,\vec b$ 所在平面的法向量 —— 求平面方程的利器。</li>
+</ul>
+</div>
+<div class="box ex">
+<b>典型用法</b>：给三点 $A,B,C$，则 $S_{\triangle ABC}=\frac12|\overrightarrow{AB}\times\overrightarrow{AC}|$；平面 $ABC$ 的法向量取 $\overrightarrow{AB}\times\overrightarrow{AC}$。
+</div>
+<p><span class="tag">真题</span> <a class="ref" href="#q-B25-7a">B25-7a</a> 反复外积的计算，靠"外积对消律"逐次化简。</p>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>1.5　混合积（三重积）</h3>
+<div class="tagline"><span class="tag formula">核心</span></div>
+<p><b>定义</b>：$(\vec a,\vec b,\vec c)=(\vec a\times\vec b)\cdot\vec c$。</p>
+<p><b>坐标式</b>：
+$$(\vec a,\vec b,\vec c)=
+\begin{vmatrix}
+x_1 & y_1 & z_1\\
+x_2 & y_2 & z_2\\
+x_3 & y_3 & z_3
+\end{vmatrix}.$$</p>
+<div class="box thm">
+<b>性质</b>
+<ul>
+<li><b>轮换不变</b>：$(\vec a,\vec b,\vec c)=(\vec b,\vec c,\vec a)=(\vec c,\vec a,\vec b)$。</li>
+<li><b>对换变号</b>：交换任意两个向量，值反号。</li>
+<li>$(\vec a,\vec a,\vec c)=0$；有零向量则为 $0$。</li>
+<li><b>几何意义</b>：$|(\vec a,\vec b,\vec c)|$ ＝ 以三向量为棱的<b>平行六面体体积</b>；四面体体积 $V=\frac16|(\vec a,\vec b,\vec c)|$。</li>
+<li><b>共面判定</b>：$\vec a,\vec b,\vec c$ 共面 $\iff (\vec a,\vec b,\vec c)=0$。</li>
+</ul>
+</div>
+<p><b>轮换展布式</b>：$(\vec a\times\vec b)\cdot\vec c=\vec a\cdot(\vec b\times\vec c)$（点叉可以互换位置，因为行列式转置不变）。</p>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>1.6　双重外积与向量恒等式</h3>
+<div class="tagline"><span class="tag formula">高频考点</span><span class="tag">真题</span></div>
+<div class="box thm">
+<b>双重外积公式（"BAC − CAB"）</b>
+$$(\vec a\times\vec b)\times\vec c=(\vec a\cdot\vec c)\,\vec b-(\vec b\cdot\vec c)\,\vec a$$
+$$\vec a\times(\vec b\times\vec c)=(\vec a\cdot\vec c)\,\vec b-(\vec a\cdot\vec b)\,\vec c$$
+<b>记忆法</b>：结果落在<b>括号里那个</b>没参与最外层叉乘的两个向量上，中间那个取正、外面那个（$\vec a$ 或 $\vec c$ 的对应项）取负。口诀：<b>中间的留正，夹层的带负</b>。
+</div>
+<div class="box thm">
+<b>拉格朗日恒等式</b>
+$$(\vec a\times\vec b)\cdot(\vec c\times\vec d)=(\vec a\cdot\vec c)(\vec b\cdot\vec d)-(\vec a\cdot\vec d)(\vec b\cdot\vec c)$$
+特例（$\vec c=\vec a,\vec d=\vec b$）：$|\vec a\times\vec b|^2=|\vec a|^2|\vec b|^2-(\vec a\cdot\vec b)^2$。
+</div>
+<div class="box thm">
+<b>雅可比恒等式</b>
+$$\vec a\times(\vec b\times\vec c)+\vec b\times(\vec c\times\vec a)+\vec c\times(\vec a\times\vec b)=\vec 0.$$
+</div>
+<div class="box thm">
+<b>纯二重外积 vs 混二重外积</b>：$(\vec a\times\vec b)\times\vec c$ 与 $\vec a\times(\vec b\times\vec c)$ <b>一般不相等</b>，差为
+$$(\vec a\times\vec b)\times\vec c-\vec a\times(\vec b\times\vec c)=(\vec a\cdot\vec c)\vec b-(\vec a\cdot\vec b)\vec c-(\vec a\cdot\vec c)\vec b+(\vec b\cdot\vec c)\vec a=(\vec b\cdot\vec c)\vec a-(\vec a\cdot\vec b)\vec c .$$
+（外积不满足结合律是常见陷阱。）
+</div>
+<details class="fold">
+<summary>推导：双重外积公式怎么来的</summary>
+<p>取 $\vec a,\vec b$ 张成的平面，先把 $\vec c$ 分解为平行于该平面与垂直于该平面的两部分。垂直于平面的部分与 $\vec a\times\vec b$ 平行，故 $(\vec a\times\vec b)\times\vec c$ 只与 $\vec c$ 的<b>面内分量</b>有关，因而结果必为 $\vec a,\vec b$ 的线性组合，设 $(\vec a\times\vec b)\times\vec c=\lambda\vec a+\mu\vec b$。</p>
+<p>两边与 $\vec c$ 作内积：左边 $((\vec a\times\vec b)\times\vec c)\cdot\vec c=0$（外积结果垂直于 $\vec c$），所以 $\lambda(\vec a\cdot\vec c)+\mu(\vec b\cdot\vec c)=0$，取 $\lambda=(\vec b\cdot\vec c)$，$\mu=-(\vec a\cdot\vec c)$。再取一组具体向量（如 $\vec a=\vec i,\vec b=\vec j,\vec c=\vec i+\vec k$）定符号即可。</p>
+</details>
+<p><span class="tag">真题</span> <a class="ref" href="#q-J21-6">J21-6</a>（证 $(\vec a\times\vec b)\times\vec c$ 公式）、<a class="ref" href="#q-J25-6">J25-6</a>（拉格朗日恒等式推出的三向量恒等式）、<a class="ref" href="#q-B25-7a">B25-7a</a>（连续外积求值）。</p>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>1.7　方向角、方向余弦与方向数</h3>
+<div class="tagline"><span class="tag formula">基础</span></div>
+<p>向量 $\vec v=(X,Y,Z)$ 与三坐标轴正向的夹角 $\alpha,\beta,\gamma$ 叫<b>方向角</b>，其余弦叫<b>方向余弦</b>：
+$$\cos\alpha=\frac{X}{\sqrt{X^2+Y^2+Z^2}},\quad
+\cos\beta=\frac{Y}{\sqrt{X^2+Y^2+Z^2}},\quad
+\cos\gamma=\frac{Z}{\sqrt{X^2+Y^2+Z^2}}.$$</p>
+<div class="box thm">
+<b>恒等式</b>：$\cos^2\alpha+\cos^2\beta+\cos^2\gamma=1$。
+<br>即单位向量 $(\cos\alpha,\cos\beta,\cos\gamma)$ 的模为 $1$。
+</div>
+<p>$(X,Y,Z)$ 叫<b>方向数</b>（一组方向向量），与方向余弦只差一个正比例因子。直线的标准方程正是用方向数写的。</p>
+<p><b>两点确定的方向数</b>：$\overrightarrow{M_1M_2}=(x_2-x_1,\;y_2-y_1,\;z_2-z_1)$。</p>
+</article>
+
+<article class="kp" data-kind="thm">
+<h3>1.8　向量方法证共线、共面、共点</h3>
+<div class="tagline"><span class="tag thm">证明题模板</span><span class="tag">真题</span></div>
+<table>
+<thead><tr><th>要证</th><th>向量判定式</th></tr></thead>
+<tbody>
+<tr><td>$A,B,C$ 三点共线</td><td>$\overrightarrow{AB}\times\overrightarrow{AC}=\vec 0$（或两向量成比例）</td></tr>
+<tr><td>$A,B,C,D$ 四点共面</td><td>$(\overrightarrow{AB},\overrightarrow{AC},\overrightarrow{AD})=0$</td></tr>
+<tr><td>$\vec a,\vec b,\vec c$ 三向量共面</td><td>$(\vec a,\vec b,\vec c)=0$</td></tr>
+<tr><td>三向量共线</td><td>两两外积为零</td></tr>
+<tr><td>$C$ 在 $AB$ 直线上</td><td>$\overrightarrow{OC}=(1-t)\overrightarrow{OA}+t\overrightarrow{OB}$（系数和为 $1$）</td></tr>
+</tbody>
+</table>
+<div class="box thm">
+<b>"系数和为 1"定理</b>（<a class="ref" href="#q-E24-10">E24-10</a>）：设 $O,A,B$ 不共线且 $A\ne B$，则 $C$ 与 $A,B$ 共线 $\iff \overrightarrow{OC}=\alpha\overrightarrow{OA}+\beta\overrightarrow{OB}$ 且 $\alpha+\beta=1$。
+<br><b>必要性</b>：$C$ 在直线 $AB$ 上，设 $\overrightarrow{AC}=t\overrightarrow{AB}$，则 $\overrightarrow{OC}=\overrightarrow{OA}+t(\overrightarrow{OB}-\overrightarrow{OA})=(1-t)\overrightarrow{OA}+t\overrightarrow{OB}$，系数和 $1$。
+<br><b>充分性</b>：若 $\overrightarrow{OC}=\alpha\overrightarrow{OA}+\beta\overrightarrow{OB}$ 且 $\alpha+\beta=1$，则 $\overrightarrow{AC}=\overrightarrow{OC}-\overrightarrow{OA}=(\alpha-1)\overrightarrow{OA}+\beta\overrightarrow{OB}=\beta\overrightarrow{OB}-\beta\overrightarrow{OA}=\beta\overrightarrow{AB}$，故共线。
+</div>
+<div class="box tip">
+<b>推广</b>：$A,B,C$ 不共面时，$D$ 与 $A,B,C$ 共面 $\iff \overrightarrow{OD}=\alpha\overrightarrow{OA}+\beta\overrightarrow{OB}+\gamma\overrightarrow{OC}$ 且 $\alpha+\beta+\gamma=1$。<br>
+<b>平面仿射坐标</b>：$\alpha,\beta,\gamma$ 就是 $D$ 关于三角形 $ABC$ 的<b>重心坐标</b>。
+</div>
+</article>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="c2">2　平面</h2>
+
+<article class="kp" data-kind="formula">
+<h3>2.1　平面方程的四种形式</h3>
+<div class="tagline"><span class="tag formula">核心</span></div>
+<div class="box thm">
+<b>① 点法式</b>：过 $M_0(x_0,y_0,z_0)$，法向量 $\vec n=(A,B,C)$：
+$$A(x-x_0)+B(y-y_0)+C(z-z_0)=0.$$
+<b>② 一般式</b>：$Ax+By+Cz+D=0$，法向量 $\vec n=(A,B,C)$，$A,B,C$ 不全为零。
+<br><b>③ 截距式</b>（不过原点且不平行于坐标轴）：$\dfrac{x}{a}+\dfrac{y}{b}+\dfrac{z}{c}=1$，三截距为 $a,b,c$。
+<br><b>④ 法式（法线式）</b>：$x\cos\alpha+y\cos\beta+z\cos\gamma-p=0$，其中 $(\cos\alpha,\cos\beta,\cos\gamma)$ 是<b>单位</b>法向量，$p\ge0$ 是原点到平面的距离。
+</div>
+<p><b>一般式化法式</b>：乘以归一化因子 $\mu=\pm\dfrac{1}{\sqrt{A^2+B^2+C^2}}$，符号取与 $D$ <b>相反</b>（使常数项为 $-p\le 0$）。</p>
+<div class="box ex">
+<b>三点的平面</b>：$A,B,C$ 不共线时，法向量 $\vec n=\overrightarrow{AB}\times\overrightarrow{AC}$，再套点法式。
+<br>或直接用行列式：$\begin{vmatrix}x-x_1&y-y_1&z-z_1\\x_2-x_1&y_2-y_1&z_2-z_1\\x_3-x_1&y_3-y_1&z_3-z_1\end{vmatrix}=0$。
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>2.2　特殊位置的平面</h3>
+<div class="tagline"><span class="tag formula">必背</span></div>
+<div class="tw"><table>
+<thead><tr><th>方程特征</th><th>几何位置</th></tr></thead>
+<tbody>
+<tr><td>$D=0$</td><td>过原点</td></tr>
+<tr><td>$A=0$</td><td>平行于 $x$ 轴（法向量与 $\vec i$ 垂直）</td></tr>
+<tr><td>$A=B=0$</td><td>平行于 $xOy$ 面（即垂直于 $z$ 轴）</td></tr>
+<tr><td>$A=D=0$</td><td>过 $x$ 轴</td></tr>
+<tr><td>$A=B=D=0$</td><td>就是 $xOy$ 面（$z=0$）</td></tr>
+<tr><td>$Ax+By+Cz=0$</td><td>过原点的平面</td></tr>
+</tbody>
+</table></div>
+<div class="box tip">
+<b>一句话记</b>：法向量哪个分量为 $0$，平面就"平行于"哪个坐标轴；缺哪个字母（哪个变量的系数为 $0$），平面就<b>平行于</b>哪条轴；<b>缺常数项 $D$ 就过原点</b>。
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>2.3　点到平面的距离</h3>
+<div class="tagline"><span class="tag formula">核心</span></div>
+$$d=\frac{|Ax_0+By_0+Cz_0+D|}{\sqrt{A^2+B^2+C^2}}.$$
+<div class="box ex">
+<b>两组平行平面的距离</b>：$Ax+By+Cz+D_1=0$ 与 $Ax+By+Cz+D_2=0$ 间距离
+$d=\dfrac{|D_1-D_2|}{\sqrt{A^2+B^2+C^2}}$（必须先把系数<b>配成相同</b>）。
+</div>
+<div class="box warn">
+<b>易错</b>：分子忘记加绝对值，会得到"有向距离"；分母漏开方。点到平面距离的分子是<b>代入后取绝对值</b>。
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>2.4　两平面的位置关系与夹角</h3>
+<div class="tagline"><span class="tag formula">核心</span></div>
+<p>设 $\pi_1:A_1x+B_1y+C_1z+D_1=0$，$\pi_2:A_2x+B_2y+C_2z+D_2=0$，法向量 $\vec n_1,\vec n_2$。</p>
+<div class="box thm">
+<b>夹角</b>（取锐角）：
+$$\cos\theta=\frac{|\vec n_1\cdot\vec n_2|}{|\vec n_1||\vec n_2|}
+=\frac{|A_1A_2+B_1B_2+C_1C_2|}{\sqrt{A_1^2+B_1^2+C_1^2}\sqrt{A_2^2+B_2^2+C_2^2}}.$$
+<b>垂直</b>：$\vec n_1\perp\vec n_2\iff A_1A_2+B_1B_2+C_1C_2=0$。
+<br><b>平行（含重合）</b>：$\vec n_1\parallel\vec n_2\iff \dfrac{A_1}{A_2}=\dfrac{B_1}{B_2}=\dfrac{C_1}{C_2}$（分母为 $0$ 时按对应分量成比例理解）。
+<br><b>重合</b>：比例式再连 $D$ 也对：$\dfrac{A_1}{A_2}=\dfrac{B_1}{B_2}=\dfrac{C_1}{C_2}=\dfrac{D_1}{D_2}$。
+</div>
+<div class="box tip">
+<b>过直线作平面（平面束）</b>：设直线 $l$ 是两平面 $\pi_1,\pi_2$ 的交线，则<b>过 $l$ 的平面束</b>为
+$$\pi_1+\lambda\pi_2:\quad (A_1+\lambda A_2)x+(B_1+\lambda B_2)y+(C_1+\lambda C_2)z+(D_1+\lambda D_2)=0 .$$
+（除 $\pi_2$ 本身外，过 $l$ 的平面都可由某个 $\lambda$ 表示。）
+</div>
+<details class="fold">
+<summary>用平面束求"过直线且满足某条件"的平面（通用套路）</summary>
+<p><b>步骤</b>：</p>
+<ol>
+<li>把直线写成两个平面的交：$\begin{cases}\pi_1=0\\ \pi_2=0\end{cases}$。</li>
+<li>写出平面束 $\pi_1+\lambda\pi_2=0$，其法向量
+$\vec n_\lambda=(A_1+\lambda A_2,\;B_1+\lambda B_2,\;C_1+\lambda C_2)$。</li>
+<li>把题设条件翻译成关于 $\vec n_\lambda$ 的方程解出 $\lambda$：
+  <ul>
+  <li>与已知平面 $A'x+B'y+C'z+D'=0$ <b>垂直</b> ⟹ $\vec n_\lambda\cdot\vec n'=0$</li>
+  <li>与已知平面 <b>平行</b> ⟹ $\vec n_\lambda\parallel\vec n'$（分量成比例）</li>
+  <li>与已知向量 $\vec s$ <b>平行</b>（即平面含该方向）⟹ $\vec n_\lambda\cdot\vec s=0$</li>
+  <li>过某已知点 $M$ ⟹ 把 $M$ 代入 $\pi_1+\lambda\pi_2=0$ 解 $\lambda$</li>
+  </ul>
+</li>
+<li>代回并约去公因子，化简成一般式（并说明 $\pi_2$ 本身是否也满足）。</li>
+</ol>
+<p><b>特判</b>：$\lambda\to\infty$ 对应 $\pi_2$ 本身，别漏。</p>
+<p><span class="tag">真题</span> <a class="ref" href="#q-B25-7c">B25-7c</a>（过直线作垂直平面）、<a class="ref" href="#q-J21-7">J21-7</a>（过直线作平行于 $z$ 轴的平面）、<a class="ref" href="#q-E22-7">E22-7(2)</a>（过 $l_1$ 且平行于 $l_2$）。</p>
+</details>
+</article>
+
+<article class="kp" data-kind="thm">
+<h3>2.5　三平面的位置关系</h3>
+<div class="tagline"><span class="tag thm">进阶</span></div>
+<p>三平面 $\pi_i:A_ix+B_iy+C_iz+D_i=0\ (i=1,2,3)$，看方程组解的情况（$\boldsymbol A$ 为 $3\times3$ 系数矩阵，$\bar{\boldsymbol A}$ 为增广矩阵）：</p>
+<div class="tw"><table>
+<thead><tr><th>条件</th><th>位置关系</th></tr></thead>
+<tbody>
+<tr><td>$r(\boldsymbol A)=r(\bar{\boldsymbol A})=3$</td><td>交于唯一一点</td></tr>
+<tr><td>$r(\boldsymbol A)=2,\ r(\bar{\boldsymbol A})=2$</td><td>交于一条直线（三平面共线——不是同一条，是"束"）</td></tr>
+<tr><td>$r(\boldsymbol A)=1,\ r(\bar{\boldsymbol A})=1$</td><td>三平面重合</td></tr>
+<tr><td>$r(\boldsymbol A)=2,\ r(\bar{\boldsymbol A})=3$</td><td>无公共点：或两两相交成三平行线，或两平行被第三平面截</td></tr>
+<tr><td>$r(\boldsymbol A)=1,\ r(\bar{\boldsymbol A})=2$</td><td>三平面平行但不重合</td></tr>
+</tbody>
+</table></div>
+</article>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="c3">3　空间直线</h2>
+
+<article class="kp" data-kind="formula">
+<h3>3.1　直线方程的四种形式</h3>
+<div class="tagline"><span class="tag formula">核心</span></div>
+<div class="box thm">
+<b>① 标准式（对称式 / 点向式）</b>：过 $M_0(x_0,y_0,z_0)$，方向向量 $\vec s=(l,m,n)$：
+$$\frac{x-x_0}{l}=\frac{y-y_0}{m}=\frac{z-z_0}{n}.$$
+（方向数中某个为 $0$ 时按"分子为 $0$"理解，如 $\frac{x-x_0}{l}=\frac{y-y_0}{m},\ z=z_0$。）
+<br><b>② 参数式</b>：$\begin{cases}x=x_0+lt\\ y=y_0+mt\\ z=z_0+nt\end{cases}\quad(t\in\mathbb R)$。
+<br><b>③ 一般式（交面式）</b>：$\begin{cases}A_1x+B_1y+C_1z+D_1=0\\ A_2x+B_2y+C_2z+D_2=0\end{cases}$，方向向量 $\vec s=\vec n_1\times\vec n_2$。
+<br><b>④ 两点式</b>：过 $M_1,M_2$：$\dfrac{x-x_1}{x_2-x_1}=\dfrac{y-y_1}{y_2-y_1}=\dfrac{z-z_1}{z_2-z_1}$。
+</div>
+<div class="box tip">
+<b>一般式 ⟶ 标准式的三步法</b>
+<ol>
+<li>方向向量 $\vec s=(A_1,B_1,C_1)\times(A_2,B_2,C_2)$；</li>
+<li>求直线上一点：令某个变量（选让方程最好解的那个）为特殊值，解二元一次方程组；</li>
+<li>代入标准式。</li>
+</ol>
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>3.2　直线与平面的位置关系</h3>
+<div class="tagline"><span class="tag formula">核心</span></div>
+<p>直线 $l$：过 $M_0$、方向 $\vec s=(l,m,n)$；平面 $\pi$：法向量 $\vec n=(A,B,C)$。</p>
+<div class="tw"><table>
+<thead><tr><th>关系</th><th>判定</th></tr></thead>
+<tbody>
+<tr><td>$l$ 与 $\pi$ 相交（唯一交点）</td><td>$\vec s\cdot\vec n\ne 0$</td></tr>
+<tr><td>$l\parallel\pi$（不在平面上）</td><td>$\vec s\cdot\vec n=0$ 且 $M_0\notin\pi$</td></tr>
+<tr><td>$l\subset\pi$</td><td>$\vec s\cdot\vec n=0$ 且 $M_0\in\pi$</td></tr>
+<tr><td>$l\perp\pi$</td><td>$\vec s\parallel\vec n$（分量成比例）</td></tr>
+</tbody>
+</table></div>
+<div class="box thm">
+<b>直线与平面的夹角</b> $\varphi$（$0\le\varphi\le\pi/2$）：
+$$\sin\varphi=\frac{|\vec s\cdot\vec n|}{|\vec s||\vec n|}
+=\frac{|Al+Bm+Cn|}{\sqrt{l^2+m^2+n^2}\sqrt{A^2+B^2+C^2}}.$$
+<b>注意是 $\sin$ 不是 $\cos$</b> —— 方向向量与法向量夹角的余角才是线面角。
+</div>
+<div class="box ex">
+<b>求交点</b>：把参数式 $x=x_0+lt,\dots$ 代入平面方程解 $t$，回代即得交点。
+</div>
+<p><span class="tag">真题</span> <a class="ref" href="#q-J26-6">J26-6</a>（平面内与已知直线垂直相交的直线）、<a class="ref" href="#q-E22-7">E22-7</a>（线线角的正弦 + 过线平行面）。</p>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>3.3　点到直线的距离</h3>
+<div class="tagline"><span class="tag formula">核心</span></div>
+<p>$M_1$ 为直线 $l$ 上任意一点，$\vec s$ 为 $l$ 的方向向量，$P$ 为直线外一点：
+$$d=\frac{|\overrightarrow{M_1P}\times\vec s|}{|\vec s|}.$$</p>
+<details class="fold">
+<summary>推导 & 第二种算法（参数法 / 最小距离）</summary>
+<p><b>外积法</b>：$|\overrightarrow{M_1P}\times\vec s|=|\overrightarrow{M_1P}||\vec s|\sin\theta$，其中 $\theta$ 是 $\overrightarrow{M_1P}$ 与 $\vec s$ 的夹角。而 $d=|\overrightarrow{M_1P}|\sin\theta$，两式相除即得。</p>
+<p><b>参数法</b>（求垂足时用）：把 $l$ 写成参数式，设动点 $Q(t)$，由 $\overrightarrow{PQ}\cdot\vec s=0$ 解出 $t$，$d=|\overrightarrow{PQ}|$。这个方法同时给出<b>垂足坐标</b>。</p>
+<p><b>对称点</b>：求 $P$ 关于 $l$ 的对称点 $P'$，先求垂足 $Q$，则 $P'=2Q-P$。<span class="tag">真题</span> <a class="ref" href="#q-B26-7a">B26-7a</a></p>
+</details>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>3.4　两直线的位置关系</h3>
+<div class="tagline"><span class="tag formula">核心</span><span class="tag">必考</span></div>
+<p>设 $l_1$ 过 $M_1$、方向 $\vec s_1$；$l_2$ 过 $M_2$、方向 $\vec s_2$。记 $\overrightarrow{M_1M_2}=\vec r$，$\Delta=(\vec r,\vec s_1,\vec s_2)$（混合积）。</p>
+<div class="tw"><table>
+<thead><tr><th>位置关系</th><th>判定条件</th></tr></thead>
+<tbody>
+<tr><td><b>异面</b>（不共面）</td><td>$\Delta\ne 0$</td></tr>
+<tr><td>相交</td><td>$\Delta=0$ 且 $\vec s_1\times\vec s_2\ne\vec 0$</td></tr>
+<tr><td>平行（不重合）</td><td>$\vec s_1\times\vec s_2=\vec 0$ 且 $\vec r\times\vec s_1\ne\vec 0$</td></tr>
+<tr><td>重合</td><td>$\vec s_1\times\vec s_2=\vec 0$ 且 $\vec r\times\vec s_1=\vec 0$</td></tr>
+</tbody>
+</table></div>
+<div class="box thm">
+<b>两直线的夹角</b>（取锐角）
+$$\cos\theta=\frac{|\vec s_1\cdot\vec s_2|}{|\vec s_1||\vec s_2|}.$$
+<b>垂直</b> $\iff \vec s_1\cdot\vec s_2=0$。
+</div>
+<div class="box thm">
+<b>异面直线的距离</b>（公垂线段长）
+$$d=\frac{|(\overrightarrow{M_1M_2},\vec s_1,\vec s_2)|}{|\vec s_1\times\vec s_2|}
+=\frac{\bigl|\overrightarrow{M_1M_2}\cdot(\vec s_1\times\vec s_2)\bigr|}{|\vec s_1\times\vec s_2|}.$$
+<b>几何含义</b>：分子是平行六面体体积，分母是底面积，商就是高 —— 即公垂线段长。
+</div>
+<div class="box thm">
+<b>公垂线</b>（异面直线的唯一公垂线）
+<ul>
+<li>方向向量 $\vec s=\vec s_1\times\vec s_2$；</li>
+<li>求法一：设公垂线与 $l_1,l_2$ 分别交于 $P,Q$，由 $\overrightarrow{PQ}\parallel\vec s_1\times\vec s_2$ 且 $\overrightarrow{PQ}\perp\vec s_1,\overrightarrow{PQ}\perp\vec s_2$ 联立解出 $P,Q$；</li>
+<li>求法二（<b>过定点作与两条异面直线都相交的直线</b>）：设所求直线过 $M$，方向 $\vec s=(X,Y,Z)$。它过 $l_1$ 意味着 $M$ 与 $l_1$ 共面，即 $(\overrightarrow{MA_1},\vec s_1,\vec s)=0$（$A_1$ 是 $l_1$ 上一点）；同理 $(\overrightarrow{MA_2},\vec s_2,\vec s)=0$。两个方程解出 $\vec s$ 的比例。</li>
+</ul>
+</div>
+<div class="box ex">
+<b>套路口诀</b>：遇到"求一条直线与两条已知直线都相交" ⟹ 写"共面条件"（混合积为零）两个方程；再若还要求"平行于某平面"或"垂直于某方向" ⟹ 再加一个 $\vec s\cdot\vec n=0$，三个方程定三个分量。这就是 <a class="ref" href="#q-B24-8">B24-8</a> 的做法。
+</div>
+</article>
+
+<article class="kp" data-kind="ex">
+<h3>3.5　直线束</h3>
+<div class="tagline"><span class="tag ex">例</span></div>
+<p>过直线 $l$ 与平面 $\pi$ 交点的<b>所有直线</b>：若 $l$ 的方向为 $\vec s$、与 $\pi$ 交于 $P$，则这些直线可写成"过 $P$、方向 $\vec s+\lambda\vec n$"。</p>
+<p>平面上过两直线 $l_1,l_2$ 交点的<b>直线束</b>：$l_1+\lambda l_2=0$。</p>
+</article>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="c4">4　曲面与空间曲线</h2>
+
+<article class="kp" data-kind="formula">
+<h3>4.1　曲面方程与球面</h3>
+<div class="tagline"><span class="tag formula">基础</span></div>
+<p><b>曲面方程</b> $F(x,y,z)=0$：曲面上每点坐标满足方程，且不在曲面上的点不满足。若 $F$ 是关于 $x,y,z$ 的 $n$ 次多项式，称 $n$ 次曲面。</p>
+<div class="box thm">
+<b>球面</b>：球心 $(a,b,c)$、半径 $R$：
+$$(x-a)^2+(y-b)^2+(z-c)^2=R^2.$$
+<b>一般式</b>：$x^2+y^2+z^2+Dx+Ey+Fz+G=0$，配方得
+$$\left(x+\tfrac D2\right)^2+\left(y+\tfrac E2\right)^2+\left(z+\tfrac F2\right)^2=\tfrac{D^2+E^2+F^2-4G}{4}.$$
+<ul>
+<li>右端 $>0$：真球面，球心 $\left(-\frac D2,-\frac E2,-\frac F2\right)$，$R=\frac12\sqrt{D^2+E^2+F^2-4G}$；</li>
+<li>右端 $=0$：一点（点球）；</li>
+<li>右端 $<0$：虚球面（无实轨迹）。</li>
+</ul>
+</div>
+<p><b>球面与平面交</b>：截线是圆，圆心是球心到平面的垂足，半径由 $r=\sqrt{R^2-d^2}$ 给出（$d$ 为球心到平面距离）。</p>
+<p><span class="tag">真题</span> <a class="ref" href="#q-J26-7">J26-7</a> 两球面交线（是一个圆）绕 $z$ 轴旋转。</p>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>4.2　柱面</h3>
+<div class="tagline"><span class="tag formula">核心</span><span class="tag">真题</span></div>
+<div class="box thm">
+<b>定义</b>：动直线 $l$ 沿定曲线 $C$ 平行移动（方向不变）所成的曲面叫<b>柱面</b>。动直线叫<b>母线</b>，$C$ 叫<b>准线</b>。
+</div>
+<div class="box thm">
+<b>母线平行于 $z$ 轴的柱面</b>：方程中<b>不含 $z$</b>，即 $F(x,y)=0$。
+<br>一般地：<b>缺哪个变量，母线就平行于哪条坐标轴</b>。
+<ul>
+<li>$F(x,y)=0$：母线 $\parallel z$ 轴（准线是 $xOy$ 面上的曲线 $F(x,y)=0$）</li>
+<li>$F(y,z)=0$：母线 $\parallel x$ 轴</li>
+<li>$F(x,z)=0$：母线 $\parallel y$ 轴</li>
+</ul>
+</div>
+<div class="box thm">
+<b>一般柱面：母线方向怎么求</b>
+<br>设曲面由 $f(u,v)=0$ 给出，其中 $u=u(x,y,z),\,v=v(x,y,z)$。母线方向 $\vec s$ 必须使 $u,v$ 沿 $\vec s$ 不变，即
+$$\vec s\cdot\nabla u=0,\qquad \vec s\cdot\nabla v=0,\qquad\text{即}\quad \vec s=\nabla u\times\nabla v .$$
+<b>例</b>（<a class="ref" href="#q-B26-7d">B26-7d</a>）：$f(x+y+z,\;2x-3y)=0$，$u=x+y+z$ 的梯度 $(1,1,1)$，$v=2x-3y$ 的梯度 $(2,-3,0)$，两梯度叉积即母线方向，再单位化。
+</div>
+<details class="fold">
+<summary>为什么 $\vec s=\nabla u\times\nabla v$（原理）</summary>
+<p>沿母线方向移动 $\vec s$ 时，曲面方程 $f(u,v)=0$ 必须保持成立，所以要求 $u,v$ 都<b>不被改变</b>（若 $u$ 变了 $v$ 也按同样方式变还可能保持 $f=0$，但对一般的 $f$ 唯一保证的做法是 $u,v$ 各自不变）。</p>
+<p>梯度 $\nabla u$ 是使 $u$ 增长最快的方向，沿与 $\nabla u$ 垂直的方向走 $u$ 不变（一阶近似下）。故 $\vec s\perp\nabla u$、$\vec s\perp\nabla v$，三维中这样的方向唯一（差一个倍数），即 $\nabla u\times\nabla v$。</p>
+<p><b>线性情形更直观</b>：$u,v$ 是 $x,y,z$ 的一次式时，$f(u,v)=0$ 是"柱面"，母线方向就是线性方程组 $\nabla u\cdot\vec s=0,\ \nabla v\cdot\vec s=0$ 的非零解。</p>
+</details>
+<div class="box ex">
+<b>二次柱面</b>（都是缺变量的形式）
+<ul>
+<li>椭圆柱面 $\dfrac{x^2}{a^2}+\dfrac{y^2}{b^2}=1$</li>
+<li>双曲柱面 $\dfrac{x^2}{a^2}-\dfrac{y^2}{b^2}=1$</li>
+<li>抛物柱面 $y^2=2px$</li>
+</ul>
+</div>
+<p><span class="tag">真题</span> <a class="ref" href="#q-E24-9">E24-9</a>（证一般二次曲面是柱面 + 求母线方向 + 求准线）。</p>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>4.3　锥面</h3>
+<div class="tagline"><span class="tag formula">核心</span></div>
+<div class="box thm">
+<b>定义</b>：动直线过定点 $P_0$（顶点）并沿定曲线 $C$（准线）移动所成的曲面。动直线叫母线。
+<br><b>方程特征</b>：以顶点为原点时，锥面方程是<b>$x,y,z$ 的齐次方程</b>（$F(tx,ty,tz)=t^kF(x,y,z)$）。反之，齐次方程表示以原点为顶点的锥面。
+</div>
+<p><b>求法（顶点 + 准线）</b>：设顶点 $P_0$，准线 $\begin{cases}F(x,y,z)=0\\ G(x,y,z)=0\end{cases}$。母线参数式 $x=x_0+lt,\dots$；与准线联立消去 $x,y,z$ 得关于 $l:m:n$ 的关系式，再把 $l:m:n=(x-x_0):(y-y_0):(z-z_0)$ 代回，即得锥面方程。</p>
+<div class="box ex">
+<b>常用结论</b>：二次锥面 $\dfrac{x^2}{a^2}+\dfrac{y^2}{b^2}-\dfrac{z^2}{c^2}=0$ 是以原点为顶点、以 $\frac{x^2}{a^2}+\frac{y^2}{b^2}=1,\ z=c$ 为一条准线的锥面。
+<br>单叶双曲面 $\frac{x^2}{a^2}+\frac{y^2}{b^2}-\frac{z^2}{c^2}=1$ 的<b>渐近锥面</b>是 $\frac{x^2}{a^2}+\frac{y^2}{b^2}-\frac{z^2}{c^2}=0$。
+</div>
+<p><span class="tag">真题</span> <a class="ref" href="#q-E22-9">E22-9</a>（动平面交线轨迹是锥面）。</p>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>4.4　旋转曲面</h3>
+<div class="tagline"><span class="tag formula">核心</span><span class="tag">真题</span></div>
+<div class="box thm">
+<b>定义</b>：一条曲线 $C$ 绕一条定直线 $l$ 旋转一周所成的曲面。$C$ 是<b>母线</b>，$l$ 是<b>旋转轴</b>。
+<br><b>关键</b>：旋转时，母线上每点画出一个圆，该圆所在的平面垂直于轴。
+</div>
+<div class="box thm">
+<b>坐标面内曲线绕坐标轴旋转（必背公式）</b>
+<br>设 $yOz$ 面上曲线 $C:f(y,z)=0$：
+<ul>
+<li>绕 $z$ 轴旋转 ⟹ $f\bigl(\pm\sqrt{x^2+y^2},\;z\bigr)=0$（把 $y$ 换成 $\pm\sqrt{x^2+y^2}$）</li>
+<li>绕 $y$ 轴旋转 ⟹ $f\bigl(y,\;\pm\sqrt{x^2+z^2}\bigr)=0$（把 $z$ 换成 $\pm\sqrt{x^2+z^2}$）</li>
+</ul>
+化简后平方去根号；<b>平方时注意把"$y$ 替换成 $\sqrt{x^2+y^2}$"中的 $y$ 整体替掉</b>（若原式含 $y$ 的偶次幂直接换 $\sqrt{\ }$ 再化简）。
+</div>
+<div class="box ex">
+<b>例</b>：$yOz$ 面上 $z^2=2py$ 绕 $z$ 轴 ⟹ $z^2=\pm 2p\sqrt{x^2+y^2}$ ⟹ $z^4=4p^2(x^2+y^2)$，这是旋转抛物面。
+<br><b>例</b>：$\frac{y^2}{b^2}+\frac{z^2}{c^2}=1$（$yOz$ 面内椭圆）绕 $z$ 轴 ⟹ $\frac{x^2+y^2}{b^2}+\frac{z^2}{c^2}=1$，旋转椭球面。
+</div>
+<div class="box warn">
+<b>易错</b>
+<ul>
+<li>母线<b>不在坐标面内</b>时，不能直接套公式 —— 要先用"到轴距离相等"的原理：设轴上有一点 $M_0$，母线上点 $P$ 绕轴得点 $P'$，则 $|\overrightarrow{M_0P'}|=|\overrightarrow{M_0P}|$ 且 $\overrightarrow{M_0P'}\cdot\vec s=\overrightarrow{M_0P}\cdot\vec s$（到垂足的距离与轴向坐标都不变）。</li>
+<li>只含<b>一个</b>坐标的方程（如 $x^2+y^2=R^2$）是柱面不是旋转曲面，别混。旋转曲面方程里三个变量一般<b>都出现</b>。</li>
+</ul>
+</div>
+<details class="fold">
+<summary>一般位置的旋转曲面求法（异面直线绕直线旋转）</summary>
+<p><b>原理</b>：设旋转轴 $l$ 过 $M_0$、方向 $\vec s$（取单位向量 $|\vec s|=1$）。母线上点 $P$ 旋转得点 $P'$，则 $P'$ 满足</p>
+<ol>
+<li><b>到轴的距离不变</b>：$\dfrac{|\overrightarrow{M_0P'}\times\vec s|}{|\vec s|}=\dfrac{|\overrightarrow{M_0P}\times\vec s|}{|\vec s|}$；</li>
+<li><b>沿轴的投影不变</b>：$\overrightarrow{M_0P'}\cdot\vec s=\overrightarrow{M_0P}\cdot\vec s$。</li>
+</ol>
+<p>再由 $P$ 跑遍母线（满足母线的两个方程），消去 $P$ 的坐标即得 $P'$ 的轨迹方程。</p>
+<p><b>操作步骤</b>（<a class="ref" href="#q-B26-9">B26-9</a>、<a class="ref" href="#q-J26-7">J26-7</a>）：</p>
+<ol>
+<li>把轴上取一点 $M_0$、单位方向 $\vec s$；</li>
+<li>设母线上动点 $P=(x_0,y_0,z_0)$，写出两个不变量表达式（距离²、投影 $t_0$）；</li>
+<li>设旋转后点 $P'=(x,y,z)$，写出同样两个表达式（含 $x,y,z$）并令二者相等，得到两个关系式；</li>
+<li>联立母线方程消去 $x_0,y_0,z_0$；</li>
+<li>整理成 $x,y,z$ 的方程。</li>
+</ol>
+<p><b>技巧</b>：第 3 步里"投影相等"通常直接给出 $z$ 或某线性式与 $z_0$ 的关系（当轴是坐标轴时就是 $z=z_0$），代回能大幅简化。</p>
+</details>
+<p><span class="tag">真题</span> <a class="ref" href="#q-B26-9">B26-9</a>（异面直线绕直线旋转）、<a class="ref" href="#q-J26-7">J26-7</a>（球面交线绕 $z$ 轴旋转）。</p>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>4.5　空间曲线与投影</h3>
+<div class="tagline"><span class="tag formula">核心</span></div>
+<div class="box thm">
+<b>空间曲线的一般方程</b>：两曲面交线
+$$\begin{cases}F(x,y,z)=0\\ G(x,y,z)=0\end{cases}$$
+<b>参数方程</b>：$\begin{cases}x=x(t)\\ y=y(t)\\ z=z(t)\end{cases}$。
+</div>
+<div class="box thm">
+<b>投影柱面 / 投影曲线</b>
+<ul>
+<li>曲线在 $xOy$ 面上的<b>投影柱面</b>：从方程组中<b>消去 $z$</b>，得 $H(x,y)=0$；</li>
+<li>曲线在 $xOy$ 面上的<b>投影曲线</b>：$\begin{cases}H(x,y)=0\\ z=0\end{cases}$；</li>
+<li>一般地，向哪个坐标面投影就消去对应的那个变量，再补上"该坐标面"的方程。</li>
+</ul>
+</div>
+<div class="box ex">
+<b>典型例题</b>：求 $\begin{cases}x^2+y^2+z^2=1\\ x+y+z=0\end{cases}$ 在 $xOy$ 面的投影。消 $z$：$z=-(x+y)$ 代入得 $x^2+y^2+(x+y)^2=1$，即 $2x^2+2y^2+2xy=1$ —— 这是个椭圆（其实是圆在 $xOy$ 面上的投影，注意是椭圆不是圆）。
+</div>
+<div class="box tip">
+<b>维维安尼曲线</b>：$\begin{cases}x^2+y^2+z^2=R^2\\ x^2+y^2=Rx\end{cases}$（球面与圆柱面交线），在 $xOy$ 上的投影是圆 $x^2+y^2=Rx$。
+</div>
+</article>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="c5">5　二次曲面</h2>
+
+<div class="kp">
+<h3>5.0　总览：九种二次曲面</h3>
+<div class="tagline"><span class="tag formula">必背</span></div>
+<div class="tw"><table>
+<thead><tr><th>名称</th><th>标准方程</th><th>截口特征 / 记忆点</th></tr></thead>
+<tbody>
+<tr><td>椭球面</td><td>$\dfrac{x^2}{a^2}+\dfrac{y^2}{b^2}+\dfrac{z^2}{c^2}=1$</td><td>三个方向都封口；有界；与各坐标面截得椭圆</td></tr>
+<tr><td>单叶双曲面</td><td>$\dfrac{x^2}{a^2}+\dfrac{y^2}{b^2}-\dfrac{z^2}{c^2}=1$</td><td>一正两负→"腰"最细，可用 $z=z_0$ 截得最小椭圆；<b>有直母线</b></td></tr>
+<tr><td>双叶双曲面</td><td>$\dfrac{x^2}{a^2}+\dfrac{y^2}{b^2}-\dfrac{z^2}{c^2}=-1$</td><td>两叶，$|z|\ge c$；<b>无直母线</b></td></tr>
+<tr><td>二次锥面</td><td>$\dfrac{x^2}{a^2}+\dfrac{y^2}{b^2}-\dfrac{z^2}{c^2}=0$</td><td>齐次方程，顶点在原点</td></tr>
+<tr><td>椭圆抛物面</td><td>$\dfrac{x^2}{a^2}+\dfrac{y^2}{b^2}=2z$</td><td>开口朝上，顶点为最低点；水平截口是椭圆</td></tr>
+<tr><td>双曲抛物面（马鞍面）</td><td>$\dfrac{x^2}{a^2}-\dfrac{y^2}{b^2}=2z$</td><td>鞍形；水平截口是双曲线；<b>有直母线</b></td></tr>
+<tr><td>椭圆柱面</td><td>$\dfrac{x^2}{a^2}+\dfrac{y^2}{b^2}=1$</td><td>缺 $z$，母线 $\parallel z$ 轴</td></tr>
+<tr><td>双曲柱面</td><td>$\dfrac{x^2}{a^2}-\dfrac{y^2}{b^2}=1$</td><td>缺 $z$</td></tr>
+<tr><td>抛物柱面</td><td>$y^2=2px$</td><td>缺 $z$</td></tr>
+</tbody>
+</table></div>
+<div class="box tip">
+<b>三秒钟判类型</b>：数二次项系数的<b>正负号</b>——
+<ul>
+<li>三个同号 & 常数项异号 ⟹ 椭球面；常数项同号 ⟹ 虚椭球；常数项为 $0$ ⟹ 一点</li>
+<li>两正一负 & 常数项 $=1$ ⟹ 单叶双曲面；常数项 $=-1$ ⟹ 双叶双曲面；常数项 $=0$ ⟹ 二次锥面</li>
+<li>一次项只在一个变量上（如 $2z$）且二次项两个同号 ⟹ 椭圆抛物面；两个异号 ⟹ 双曲抛物面</li>
+<li>缺一个变量的二次项 ⟹ 柱面族</li>
+</ul>
+</div>
+</div>
+
+<article class="kp" data-kind="formula">
+<h3>5.1　椭球面</h3>
+<div class="tagline"><span class="tag formula">基础</span></div>
+<p>$$\frac{x^2}{a^2}+\frac{y^2}{b^2}+\frac{z^2}{c^2}=1\qquad(a,b,c>0)$$</p>
+<ul>
+<li><b>对称性</b>：关于三个坐标面、三条坐标轴、原点都对称；</li>
+<li><b>范围</b>：$|x|\le a,\ |y|\le b,\ |z|\le c$（有界）；</li>
+<li><b>顶点</b>：$(\pm a,0,0),(0,\pm b,0),(0,0,\pm c)$ 共六个；$a,b,c$ 叫<b>半轴</b>；</li>
+<li><b>截口</b>：与坐标面（及平行平面）截得的都是椭圆（$z=z_0,\ |z_0|<c$ 时截口 $\frac{x^2}{a^2(1-z_0^2/c^2)}+\frac{y^2}{b^2(1-z_0^2/c^2)}=1$）；</li>
+<li>$a=b=c$ 时退化为<b>球面</b>；$a=b\ne c$ 时是<b>旋转椭球面</b>（绕 $z$ 轴）。</li>
+</ul>
+<p><b>参数方程</b>：$x=a\sin\varphi\cos\theta,\ y=b\sin\varphi\sin\theta,\ z=c\cos\varphi$。</p>
+<p><b>切平面</b>（见 5.8）：$\dfrac{x_0x}{a^2}+\dfrac{y_0y}{b^2}+\dfrac{z_0z}{c^2}=1$。</p>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>5.2　单叶双曲面</h3>
+<div class="tagline"><span class="tag formula">核心</span><span class="tag">直母线</span></div>
+<p>$$\frac{x^2}{a^2}+\frac{y^2}{b^2}-\frac{z^2}{c^2}=1$$</p>
+<ul>
+<li><b>对称性</b>：关于三坐标面、三轴、原点都对称；</li>
+<li><b>范围</b>：无界（$z$ 可任意大）；</li>
+<li><b>截口</b>：$z=z_0$ 截得椭圆 $\frac{x^2}{a^2}+\frac{y^2}{b^2}=1+\frac{z_0^2}{c^2}$，$z_0=0$ 时是<b>腰椭圆</b>（最小）；$x=x_0$（$|x_0|>a$）截得双曲线；$x=x_0$（$|x_0|<a$）截得双曲线（另一支方向）；与坐标面 $xOy$ 截得椭圆 $z=0$；</li>
+<li>$a=b$ 时是<b>旋转单叶双曲面</b>（绕 $z$ 轴），可由双曲线 $\frac{x^2}{a^2}-\frac{z^2}{c^2}=1$ 绕 $z$ 轴旋转得到；</li>
+<li><b>渐近锥面</b>：$\frac{x^2}{a^2}+\frac{y^2}{b^2}-\frac{z^2}{c^2}=0$；</li>
+<li><b>有直母线</b>（两族），详见 5.7。</li>
+</ul>
+<div class="box tip">
+<b>工程背景</b>：单叶双曲面是<b>直纹面</b>，用直钢筋就能搭出来（广州塔、冷却塔的造型来源）。
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>5.3　双叶双曲面</h3>
+<div class="tagline"><span class="tag formula">基础</span></div>
+<p>$$\frac{x^2}{a^2}+\frac{y^2}{b^2}-\frac{z^2}{c^2}=-1\quad\Longleftrightarrow\quad \frac{z^2}{c^2}-\frac{x^2}{a^2}-\frac{y^2}{b^2}=1$$</p>
+<ul>
+<li><b>两叶</b>：$z\ge c$ 一叶，$z\le -c$ 一叶；</li>
+<li><b>截口</b>：$z=z_0\ (|z_0|\ge c)$ 截得椭圆；$x=x_0$、$y=y_0$ 截得双曲线；</li>
+<li>关于三坐标面、三轴、原点都对称；</li>
+<li><b>没有直母线</b>（与单叶的关键区别）；</li>
+<li>渐近锥面同样是 $\frac{x^2}{a^2}+\frac{y^2}{b^2}-\frac{z^2}{c^2}=0$；</li>
+<li>$a=b$ 时是旋转双叶双曲面。</li>
+</ul>
+<div class="box warn">
+<b>易错</b>：单叶 / 双叶的判别看你<b>先把哪一项单独留正号</b>。$\frac{x^2}{a^2}+\frac{y^2}{b^2}-\frac{z^2}{c^2}=1$ 是单叶（$=1$），$=-1$ 才是双叶。写成 $\frac{z^2}{c^2}-\frac{x^2}{a^2}-\frac{y^2}{b^2}=1$ 就一目了然了。
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>5.4　椭圆抛物面</h3>
+<div class="tagline"><span class="tag formula">基础</span></div>
+<p>$$\frac{x^2}{a^2}+\frac{y^2}{b^2}=2z\quad(\text{或 } z=\frac{x^2}{2p}+\frac{y^2}{2q},\ p,q>0)$$</p>
+<ul>
+<li><b>顶点</b> $(0,0,0)$，开口朝 $z$ 轴正向；$z\ge0$；</li>
+<li><b>截口</b>：$z=z_0>0$ 截得椭圆；$x=x_0$、$y=y_0$ 截得抛物线；</li>
+<li>关于 $xOz$、$yOz$ 面及 $z$ 轴对称；<b>关于 $xOy$ 面不对称</b>（因为没有 $-z$ 那半）；</li>
+<li>$a=b$ 时是<b>旋转抛物面</b>（探照灯反光镜、卫星天线）；</li>
+<li><b>没有直母线</b>。</li>
+</ul>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>5.5　双曲抛物面（马鞍面）</h3>
+<div class="tagline"><span class="tag formula">核心</span><span class="tag">直母线</span></div>
+<p>$$\frac{x^2}{a^2}-\frac{y^2}{b^2}=2z$$</p>
+<ul>
+<li><b>顶点</b> $(0,0,0)$ 是<b>鞍点</b>；</li>
+<li><b>截口</b>：$z=z_0\ne 0$ 截得<b>双曲线</b>（$z_0>0$ 与 $z_0<0$ 的两族双曲线开口互换）；$z=0$ 截得一对相交直线 $\frac{x}{a}=\pm\frac{y}{b}$；$x=x_0$ 截得开口朝下的抛物线；$y=y_0$ 截得开口朝上的抛物线；</li>
+<li>关于 $xOz$、$yOz$ 面、$z$ 轴对称；关于 $xOy$ 面不对称；</li>
+<li><b>有直母线</b>（两族，且每族内互不相交，异族相交）；</li>
+<li>是"双重直纹面"：过每一点恰有<b>两条</b>直母线。</li>
+</ul>
+<div class="box tip">
+<b>和单叶双曲面的差别</b>：单叶双曲面每点有两条直母线但两族母线"绕着走"；双曲抛物面每点也有两条，但面上所有母线都是直线族，形状像马鞍 —— 屋顶、薯片就是这个曲面。
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>5.6　截口法（平行截割法）</h3>
+<div class="tagline"><span class="tag formula">通用方法</span></div>
+<div class="box thm">
+<b>做法</b>：用一组平行平面（通常取 $z=z_0$）去截曲面，看截线形状随 $z_0$ 变化的规律，从而判断曲面类型并作图。配合坐标面截线一起画。
+</div>
+<details class="fold">
+<summary>四种曲面用 $z=z_0$ 截口的对比表</summary>
+<div class="tw"><table>
+<thead><tr><th>曲面</th><th>$z=z_0$ 截口</th><th>随 $z_0$ 变化</th></tr></thead>
+<tbody>
+<tr><td>椭球面 $\frac{x^2}{a^2}+\frac{y^2}{b^2}+\frac{z^2}{c^2}=1$</td><td>$\frac{x^2}{a^2}+\frac{y^2}{b^2}=1-\frac{z_0^2}{c^2}$</td><td>$|z_0|=c$ 缩成一点，中间最大 —— 封口</td></tr>
+<tr><td>单叶双曲面</td><td>$\frac{x^2}{a^2}+\frac{y^2}{b^2}=1+\frac{z_0^2}{c^2}$</td><td>$z_0=0$ 最小，越往外越大 —— 喇叭口</td></tr>
+<tr><td>双叶双曲面</td><td>$\frac{x^2}{a^2}+\frac{y^2}{b^2}=\frac{z_0^2}{c^2}-1$</td><td>$|z_0|<c$ 无交；$|z_0|=c$ 一点；往外越大 —— 两片</td></tr>
+<tr><td>椭圆抛物面</td><td>$\frac{x^2}{a^2}+\frac{y^2}{b^2}=2z_0$</td><td>$z_0<0$ 无交；$z_0=0$ 一点；$z_0>0$ 椭圆 —— 单侧开口</td></tr>
+<tr><td>双曲抛物面</td><td>$\frac{x^2}{a^2}-\frac{y^2}{b^2}=2z_0$</td><td>$z_0=0$ 退化成两条相交直线；$z_0\ne0$ 是双曲线</td></tr>
+<tr><td>二次锥面</td><td>$\frac{x^2}{a^2}+\frac{y^2}{b^2}=\frac{z_0^2}{c^2}$</td><td>$z_0=0$ 一点；其余都是相似椭圆</td></tr>
+</tbody>
+</table></div>
+</details>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>5.7　直母线（直纹面）★重点</h3>
+<div class="tagline"><span class="tag formula">高频大题</span><span class="tag">真题</span></div>
+<div class="box thm">
+<b>哪些二次曲面有直母线</b>
+<ul>
+<li><b>单叶双曲面</b>：有两族直母线；</li>
+<li><b>双曲抛物面</b>：有两族直母线；</li>
+<li>（二次锥面也可看作母线过顶点的直纹面；柱面是"一族"直母线）</li>
+<li><b>椭球面、双叶双曲面、椭圆抛物面没有直母线</b>。</li>
+</ul>
+</div>
+
+<h4>① 单叶双曲面 $\dfrac{x^2}{a^2}+\dfrac{y^2}{b^2}-\dfrac{z^2}{c^2}=1$ 的直母线</h4>
+<p>把方程改写成"平方差 = 平方差"：
+$$\left(\frac{x}{a}+\frac{z}{c}\right)\left(\frac{x}{a}-\frac{z}{c}\right)=\left(1+\frac{y}{b}\right)\left(1-\frac{y}{b}\right)$$
+引入参数 $\lambda\ne 0$，令左右两边成比例，得<b>两族</b>：</p>
+<div class="box thm">
+<b>族 I</b>（记 $\lambda$ 为参数，$\lambda\ne0$）：
+$$\begin{cases}\dfrac{x}{a}+\dfrac{z}{c}=\lambda\left(1+\dfrac{y}{b}\right)\\[6pt] \dfrac{x}{a}-\dfrac{z}{c}=\dfrac{1}{\lambda}\left(1-\dfrac{y}{b}\right)\end{cases}$$
+<b>族 II</b>（记 $\mu$ 为参数，$\mu\ne0$）：
+$$\begin{cases}\dfrac{x}{a}+\dfrac{z}{c}=\mu\left(1-\dfrac{y}{b}\right)\\[6pt] \dfrac{x}{a}-\dfrac{z}{c}=\dfrac{1}{\mu}\left(1+\dfrac{y}{b}\right)\end{cases}$$
+</div>
+<div class="box tip">
+<b>要点</b>
+<ul>
+<li>每族母线都<b>整体</b>落在曲面上（把两式相乘即得曲面方程）；</li>
+<li><b>同族</b>两母线<b>异面</b>（不相交）；<b>异族</b>两母线必<b>相交</b>（交点在曲面上）；</li>
+<li>过曲面上每一点，两族各有一条母线经过；</li>
+<li>求"过定点 $P_0$ 的直母线"：把 $P_0$ 坐标代入族 I 两式，解出 $\lambda$（两式给出的 $\lambda$ 必须一致才说明 $P_0$ 在族 I 的某条母线上）；族 II 同理。</li>
+</ul>
+</div>
+
+<h4>② 双曲抛物面 $\dfrac{x^2}{a^2}-\dfrac{y^2}{b^2}=2z$ 的直母线</h4>
+<p>$$\left(\frac{x}{a}+\frac{y}{b}\right)\left(\frac{x}{a}-\frac{y}{b}\right)=2z$$</p>
+<div class="box thm">
+<b>族 I</b>（参数 $\lambda\ne0$）：
+$$\begin{cases}\dfrac{x}{a}+\dfrac{y}{b}=\lambda\\[6pt] \dfrac{x}{a}-\dfrac{y}{b}=\dfrac{2z}{\lambda}\end{cases}$$
+<b>族 II</b>（参数 $\mu\ne0$）：
+$$\begin{cases}\dfrac{x}{a}+\dfrac{y}{b}=\dfrac{2z}{\mu}\\[6pt] \dfrac{x}{a}-\dfrac{y}{b}=\mu\end{cases}$$
+</div>
+<div class="box tip">
+<b>另一个常用写法</b>：把 $\frac{x^2}{a^2}-\frac{y^2}{b^2}=2z$ 用 $\left(\frac{x}{a}+\frac{y}{b}\right)=2t z$ 与 $\left(\frac{x}{a}-\frac{y}{b}\right)=\frac1t$ 这类"两族互换"的写法也行。核心是<b>把一个二次式拆成两个一次式之积</b>。
+</div>
+
+<div class="box ex">
+<b>过定点求直母线的一般套路</b>（<a class="ref" href="#q-U-8">U-8</a>、<a class="ref" href="#q-J25-7">J25-7</a>、<a class="ref" href="#q-B24-7d">B24-7d</a>、<a class="ref" href="#q-J26-8">J26-8</a>）
+<ol>
+<li>写出两族母线的方程（含参数 $\lambda$ / $\mu$）；</li>
+<li>把定点坐标代入某一族的<b>两个</b>方程；若两式解出的参数一致（或方程相容），就得到一条母线；</li>
+<li>两族都试一遍，共可得到 1～2 条；</li>
+<li>需要时把参数方程化成标准式：从两个平面方程解方向向量 $\vec s=\vec n_1\times\vec n_2$，再找一点；</li>
+<li>求两母线夹角：$\cos\theta=\dfrac{|\vec s_1\cdot\vec s_2|}{|\vec s_1||\vec s_2|}$。</li>
+</ol>
+</div>
+<p><span class="tag">真题</span> <a class="ref" href="#q-U-8">U-8</a>（单叶双曲面过定点两条直母线 + 夹角）、<a class="ref" href="#q-B24-7d">B24-7d</a>（过定点落在曲面上的直线）、<a class="ref" href="#q-J21-8">J21-8</a>（证异族直母线共面）、<a class="ref" href="#q-J22-8">J22-8</a>（正交直母线交点轨迹）、<a class="ref" href="#q-J25-7">J25-7</a>、<a class="ref" href="#q-J26-8">J26-8</a>（双曲抛物面直母线）。</p>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>5.8　二次曲面的切平面与奇点</h3>
+<div class="tagline"><span class="tag formula">核心</span></div>
+<p>设二次曲面 $F(x,y,z)=0$ 写成
+$$F=a_{11}x^2+a_{22}y^2+a_{33}z^2+2a_{12}xy+2a_{13}xz+2a_{23}yz+2a_{14}x+2a_{24}y+2a_{34}z+a_{44}=0 .$$</p>
+<div class="box thm">
+<b>切平面方程（极化公式）</b>：$P_0(x_0,y_0,z_0)$ 在曲面上时，曲面在 $P_0$ 处的切平面为
+$$a_{11}x_0x+a_{22}y_0y+a_{33}z_0z+a_{12}(x_0y+xy_0)+a_{13}(x_0z+xz_0)+a_{23}(y_0z+yz_0)$$
+$$+\,a_{14}(x+x_0)+a_{24}(y+y_0)+a_{34}(z+z_0)+a_{44}=0 .$$
+<b>记忆法</b>：把 $x^2\to x_0x$，$xy\to\frac{x_0y+xy_0}{2}$（即拆一半各配一个下标），$x\to\frac{x+x_0}{2}$ —— <b>逐项"取一半换上 $P_0$ 的下标"</b>。
+</div>
+<div class="box ex">
+<b>标准型下的切平面（直接背）</b>
+<ul>
+<li>球面 $x^2+y^2+z^2=R^2$：$x_0x+y_0y+z_0z=R^2$</li>
+<li>椭球面 $\frac{x^2}{a^2}+\frac{y^2}{b^2}+\frac{z^2}{c^2}=1$：$\frac{x_0x}{a^2}+\frac{y_0y}{b^2}+\frac{z_0z}{c^2}=1$</li>
+<li>单叶双曲面 $\frac{x^2}{a^2}+\frac{y^2}{b^2}-\frac{z^2}{c^2}=1$：$\frac{x_0x}{a^2}+\frac{y_0y}{b^2}-\frac{z_0z}{c^2}=1$</li>
+<li>椭圆抛物面 $\frac{x^2}{a^2}+\frac{y^2}{b^2}=2z$：$\frac{x_0x}{a^2}+\frac{y_0y}{b^2}=z+z_0$</li>
+<li>二次锥面 $\frac{x^2}{a^2}+\frac{y^2}{b^2}-\frac{z^2}{c^2}=0$：$\frac{x_0x}{a^2}+\frac{y_0y}{b^2}-\frac{z_0z}{c^2}=0$</li>
+</ul>
+</div>
+<div class="box tip">
+<b>验证切平面是否过某定点的技巧</b>：把点代进去算。求"过曲面上一点的两条直母线"也可以先求切平面，再与曲面联立 —— 但用 5.7 的两族母线方程更快。
+</div>
+<div class="box warn">
+<b>奇点</b>：$F_x=F_y=F_z=0$ 的点叫奇点，此时"切平面"退化（可能是切锥）。二次锥面的顶点就是奇点。
+<br>用梯度写法：法向量 $\vec n=(F_x,F_y,F_z)|_{P_0}$，切平面 $F_x(P_0)(x-x_0)+F_y(P_0)(y-y_0)+F_z(P_0)(z-z_0)=0$。
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>5.9　曲面的参数方程与曲线族生成曲面</h3>
+<div class="tagline"><span class="tag formula">进阶</span><span class="tag">真题</span></div>
+<div class="box thm">
+<b>动直线生成曲面（含单参数直线族）的标准解法</b>
+<br>（<a class="ref" href="#q-B26-8">B26-8</a>、<a class="ref" href="#q-E24-8">E24-8</a>）
+<ol>
+<li>设动直线 $L$ 的方向向量 $\vec s=(X,Y,Z)$ 与所过点 $P=(x_0,y_0,z_0)$（含参数 $t$）；</li>
+<li>把"与 $l_1$ 相交"翻译成共面条件：$(\overrightarrow{P_1P},\vec s_1,\vec s)=0$（$P_1$ 是 $l_1$ 上一点）；</li>
+<li>同理"与 $l_2$ 相交"：$(\overrightarrow{P_2P},\vec s_2,\vec s)=0$；</li>
+<li>"平行于平面 $\Sigma$"：$\vec s\cdot\vec n_\Sigma=0$；</li>
+<li>三个条件联立，解出一条含参数的直线族（把 $x_0,y_0,z_0$ 和 $X,Y,Z$ 都用同一参数表示）；</li>
+<li>把直线族写成参数式，<b>消去参数</b>（有时要消两次：先消直线上的参数 $u$，再消族参数 $t$），得到曲面方程。</li>
+</ol>
+</div>
+<div class="box tip">
+<b>消参数的实用技巧</b>：把动直线写成
+$$\frac{x-x_0(t)}{X(t)}=\frac{y-y_0(t)}{Y(t)}=\frac{z-z_0(t)}{Z(t)}=u$$
+于是 $x=x_0(t)+uX(t)$ 等三式，总共含 $t,u$ 两个参数 —— 从三个方程中消去 $t,u$ 即得曲面方程。
+</div>
+</article>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="c6">6　平面二次曲线</h2>
+
+<article class="kp" data-kind="formula">
+<h3>6.1　二次曲线的一般理论</h3>
+<div class="tagline"><span class="tag formula">核心</span></div>
+<p>一般二次曲线
+$$F(x,y)\equiv a_{11}x^2+2a_{12}xy+a_{22}y^2+2a_1x+2a_2y+a_0=0 .$$
+矩阵形式：
+$$F(x,y)=\begin{pmatrix}x&y&1\end{pmatrix}
+\begin{pmatrix}
+a_{11}&a_{12}&a_1\\
+a_{12}&a_{22}&a_2\\
+a_1&a_2&a_0
+\end{pmatrix}
+\begin{pmatrix}x\\y\\1\end{pmatrix}=0 .$$
+记二次项部分 $\Phi(x,y)=a_{11}x^2+2a_{12}xy+a_{22}y^2$（齐次部分），一次项部分 $\varphi(x,y)=2a_1x+2a_2y$。</p>
+<div class="box thm">
+<b>三个不变量</b>（在直角坐标变换下不变）
+$$I_1=a_{11}+a_{22},\qquad I_2=\begin{vmatrix}a_{11}&a_{12}\\a_{12}&a_{22}\end{vmatrix}=a_{11}a_{22}-a_{12}^2,$$
+$$I_3=\begin{vmatrix}a_{11}&a_{12}&a_1\\a_{12}&a_{22}&a_2\\a_1&a_2&a_0\end{vmatrix}.$$
+</div>
+<div class="box thm">
+<b>半不变量</b>（在旋转下不变；平移会变）
+$$K_1=\begin{vmatrix}a_{11}&a_1\\a_1&a_0\end{vmatrix}+\begin{vmatrix}a_{22}&a_2\\a_2&a_0\end{vmatrix}
+=(a_{11}a_0-a_1^2)+(a_{22}a_0-a_2^2).$$
+当 $I_3=I_2=0$ 时才需要用到 $K_1$（判断两条平行直线的情形）。
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>6.2　中心、渐近方向与渐近线</h3>
+<div class="tagline"><span class="tag formula">核心</span></div>
+<div class="box thm">
+<b>中心</b>：方程组
+$$\begin{cases}a_{11}x+a_{12}y+a_1=0\\ a_{12}x+a_{22}y+a_2=0\end{cases}$$
+的解。记 $I_2=a_{11}a_{22}-a_{12}^2$：
+<ul>
+<li>$I_2\ne 0$ ⟹ 有<b>唯一中心</b>（椭圆型、双曲型都有唯一中心）；</li>
+<li>$I_2=0$ ⟹ 无中心或有一条中心直线（抛物型）。</li>
+</ul>
+</div>
+<div class="box thm">
+<b>渐近方向</b>：使 $\Phi(X,Y)=a_{11}X^2+2a_{12}XY+a_{22}Y^2=0$ 的方向 $(X:Y)$。
+<ul>
+<li>椭圆型（$I_2>0$）：无实渐近方向；</li>
+<li>双曲型（$I_2<0$）：两个实渐近方向；</li>
+<li>抛物型（$I_2=0$）：一个渐近方向（就是它的"轴方向"的垂直方向）。</li>
+</ul>
+<b>渐近线</b>：过中心、沿渐近方向的直线（只对双曲型有实渐近线）。
+</div>
+<div class="box ex">
+<b>求渐近线的实操做法</b>（<a class="ref" href="#q-B24-7c">B24-7c</a>）
+<ol>
+<li>先把曲线写成 $F(x,y)=0$；</li>
+<li>令 $F$ 的<b>二次项部分</b> $a_{11}x^2+2a_{12}xy+a_{22}y^2=0$，解出两个斜率 $k_1,k_2$（这是渐近方向）；</li>
+<li>求中心 $C(x_0,y_0)$；</li>
+<li>渐近线为 $y-y_0=k_1(x-x_0)$ 与 $y-y_0=k_2(x-x_0)$。</li>
+</ol>
+<b>更快的方法</b>：把 $F$ 的二次项因式分解 $a_{11}x^2+2a_{12}xy+a_{22}y^2=(\alpha_1x+\beta_1y)(\alpha_2x+\beta_2y)$，则渐近线为
+$$\alpha_1x+\beta_1y+\lambda_1=0,\qquad \alpha_2x+\beta_2y+\lambda_2=0,$$
+其中 $\lambda_1,\lambda_2$ 由"这两条直线交于中心"确定 —— 也就是把中心代入令其成立。
+</div>
+<details class="fold">
+<summary>为什么"把中心代入"能定 $\lambda$</summary>
+<p>渐近线过中心 $(x_0,y_0)$，所以 $\lambda_1=-(\alpha_1x_0+\beta_1y_0)$，$\lambda_2=-(\alpha_2x_0+\beta_2y_0)$。</p>
+<p>等价做法：直接把曲线方程中<b>一次项也做配套处理</b> —— 称 $F$ 在中心处的值 $F(x_0,y_0)=I_3/I_2$，则渐近线是
+$a_{11}x^2+2a_{12}xy+a_{22}y^2+2a_1x+2a_2y+a_0'=0$ 中的常数项换成使直线过中心的值。</p>
+</details>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>6.3　直径与共轭直径</h3>
+<div class="tagline"><span class="tag formula">进阶</span></div>
+<div class="box thm">
+<b>直径</b>：给定方向 $(X:Y)$（非渐近方向），所有以该方向为方向的弦的<b>中点轨迹</b>是一条直线，称为该方向的直径：
+$$(a_{11}x+a_{12}y+a_1)X+(a_{12}x+a_{22}y+a_2)Y=0 .$$
+</div>
+<div class="box thm">
+<b>共轭直径</b>：方向 $(X_1:Y_1)$ 的直径的方向 $(X_2:Y_2)$ 若满足
+$$a_{11}X_1X_2+a_{12}(X_1Y_2+X_2Y_1)+a_{22}Y_1Y_2=0,$$
+则两条直径互为共轭。椭圆的两共轭直径斜率的乘积 $kk'=-\dfrac{b^2}{a^2}$（在标准位置下）。
+</div>
+<div class="box tip">
+<b>椭圆共轭直径的性质</b>：设两共轭半直径长为 $a',b'$，则 $a'^2+b'^2=a^2+b^2$（定值）。这是解析几何的经典结论。
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>6.4　主方向与主轴（对称轴）</h3>
+<div class="tagline"><span class="tag formula">化简关键</span></div>
+<div class="box thm">
+<b>特征方程</b>
+$$\begin{vmatrix}a_{11}-\lambda&a_{12}\\ a_{12}&a_{22}-\lambda\end{vmatrix}=0
+\quad\Longrightarrow\quad \lambda^2-I_1\lambda+I_2=0 .$$
+两个根 $\lambda_1,\lambda_2$ 是<b>特征根</b>（$I_2>0$ 时同号，$I_2<0$ 时异号，$I_2=0$ 时一根为 $0$）。
+</div>
+<div class="box thm">
+<b>主方向</b>：与特征根 $\lambda$ 对应的方向 $(X:Y)$ 满足
+$$(a_{11}-\lambda)X+a_{12}Y=0,\qquad a_{12}X+(a_{22}-\lambda)Y=0 .$$
+两个主方向<b>互相垂直</b>（$a_{12}\ne0$ 时），这就是"正交变换"能把二次项对角化的原因。
+<br><b>主轴</b>：过中心、沿主方向的直线（即曲线的对称轴）。抛物型无中心，主轴是唯一的那条对称轴。
+</div>
+<div class="box ex">
+<b>抛物型求对称轴</b>（$I_2=0$）：此时特征根 $\lambda_1=I_1,\ \lambda_2=0$。主方向取 $\lambda_2=0$ 对应的方向 —— 解 $(a_{11}-0)X+a_{12}Y=0$ 得方向的垂直方向才是轴方向；实际操作中：<b>轴的方程 = 令 $F$ 的一次项部分按主方向写出</b>：
+$$\text{轴}:\quad \frac{a_{11}x+a_{12}y+a_1}{X_0}=\frac{a_{12}x+a_{22}y+a_2}{Y_0},$$
+其中 $(X_0:Y_0)$ 是 $\lambda=0$ 对应的主方向。
+</div>
+<p><span class="tag">真题</span> <a class="ref" href="#q-E22-8">E22-8</a>（判断类型 + 对称轴 + 顶点 + 标准方程 + 作图）。</p>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>6.5　用不变量判定二次曲线类型 ★</h3>
+<div class="tagline"><span class="tag formula">必背表</span><span class="tag">真题</span></div>
+<div class="tw"><table>
+<thead><tr><th>$I_2$</th><th>$I_3$</th><th>类型</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td rowspan="3">$I_2>0$<br><small>（椭圆型）</small></td><td>$I_3\ne 0$，$I_1I_3\lt 0$</td><td><b>椭圆</b></td><td>有实轨迹</td></tr>
+<tr><td>$I_3\ne 0$，$I_1I_3>0$</td><td>虚椭圆</td><td>无实轨迹</td></tr>
+<tr><td>$I_3=0$</td><td>一点（点椭圆）</td><td>退化为一个实点</td></tr>
+<tr><td rowspan="2">$I_2\lt 0$<br><small>（双曲型）</small></td><td>$I_3\ne 0$</td><td><b>双曲线</b></td><td>有两条实渐近线</td></tr>
+<tr><td>$I_3=0$</td><td>两条相交直线</td><td>退化为过中心的相交直线对</td></tr>
+<tr><td rowspan="3">$I_2=0$<br><small>（抛物型）</small></td><td>$I_3\ne 0$</td><td><b>抛物线</b></td><td>无中心</td></tr>
+<tr><td rowspan="2">$I_3=0$</td><td>$K_1\lt 0$</td><td>两条平行实直线</td></tr>
+<tr><td>$K_1=0$</td><td>两条重合直线</td></tr>
+<tr><td></td><td></td><td>$K_1>0$</td><td>两条平行虚直线</td></tr>
+</tbody>
+</table></div>
+<div class="box warn">
+<b>易错提醒</b>
+<ul>
+<li>判断<b>椭圆 vs 虚椭圆</b>用的是 $I_1I_3$ 的符号，不是单独看 $I_3$；</li>
+<li>$I_2=0$ 但 $I_3\ne0$ 才是抛物线（<b>不是</b>先看 $I_2$ 是否为 $0$ 就下结论）；</li>
+<li>$I_2=I_3=0$ 时才需要 $K_1$（半不变量）。</li>
+</ul>
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>6.6　二次曲线的化简与标准型</h3>
+<div class="tagline"><span class="tag formula">核心</span><span class="tag">大题模板</span></div>
+<div class="box thm">
+<b>中心型（$I_2\ne0$，即椭圆型 / 双曲型）化简流程</b>
+<ol>
+<li><b>移轴到中心</b>：解中心 $(x_0,y_0)$，作平移 $x=x'+x_0,\ y=y'+y_0$，去掉一次项，得
+$$a_{11}x'^2+2a_{12}x'y'+a_{22}y'^2+\frac{I_3}{I_2}=0 .$$
+（常数项就是 $F(x_0,y_0)=\dfrac{I_3}{I_2}$。）</li>
+<li><b>旋转消交叉项</b>：求特征根 $\lambda_{1,2}$（$\lambda^2-I_1\lambda+I_2=0$ 的根），作正交旋转使二次项变成 $\lambda_1X^2+\lambda_2Y^2$：
+$$\lambda_1X^2+\lambda_2Y^2+\frac{I_3}{I_2}=0 .$$
+旋转角 $\theta$ 由 $\tan 2\theta=\dfrac{2a_{12}}{a_{11}-a_{22}}$ 确定（取使 $\lambda_1$ 对应 $X$ 轴的那个角）。</li>
+<li><b>化成标准型</b>：两边除以 $-\dfrac{I_3}{I_2}$：
+$$\frac{X^2}{-\frac{I_3}{I_2\lambda_1}}+\frac{Y^2}{-\frac{I_3}{I_2\lambda_2}}=1 .$$
+于是<b>半轴平方</b>为
+$$a^2=-\frac{I_3}{I_2\lambda_1},\qquad b^2=-\frac{I_3}{I_2\lambda_2}.$$
+</ol>
+</div>
+<div class="box thm">
+<b>结论速用</b>：椭圆/双曲线 $\dfrac{X^2}{a^2}+\dfrac{Y^2}{b^2}=1$（双曲线时 $b^2<0$），
+$$\frac{1}{a^2}=-\frac{I_2\lambda_1}{I_3},\qquad \frac{1}{b^2}=-\frac{I_2\lambda_2}{I_3}.$$
+<b>两轴长平方和</b>（<a class="ref" href="#q-B24-7b">B24-7b</a>）：
+$$(2a)^2+(2b)^2=4(a^2+b^2)=4\left(-\frac{I_3}{I_2\lambda_1}-\frac{I_3}{I_2\lambda_2}\right)
+=-\frac{4I_3}{I_2}\cdot\frac{\lambda_1+\lambda_2}{\lambda_1\lambda_2}=-\frac{4I_3 I_1}{I_2^2}.$$
+</div>
+<div class="box thm">
+<b>抛物型（$I_2=0$）化简流程</b>
+<ol>
+<li>先把二次项因式分解为完全平方：$a_{11}x^2+2a_{12}xy+a_{22}y^2=\left(\sqrt{a_{11}}x+\sqrt{a_{22}}y\right)^2$（注意符号，$I_2=0$ 保证了它是完全平方）；</li>
+<li>作正交旋转把二次项变成 $I_1 Y^2$（$I_1=a_{11}+a_{22}$ 就是系数）；</li>
+<li>再作平移消去 $Y$ 的一次项，得 $I_1Y^2=\pm 2pX$ 形式，即 $Y^2=2p'X$；</li>
+<li>顶点 = 使新方程中一次项与常数都"归位"的点。</li>
+</ol>
+</div>
+<details class="fold">
+<summary>旋转角 $\theta$ 与坐标变换公式</summary>
+<p>把坐标系（而非图形）旋转 $\theta$，新旧坐标关系：
+$$x=x'\cos\theta-y'\sin\theta,\qquad y=x'\sin\theta+y'\cos\theta .$$
+（这是"点不动、坐标系转"的写法；若转图形则取 $-\theta$。）</p>
+<p>代入后交叉项系数变为 $\dfrac{a_{11}-a_{22}}{2}\sin2\theta+a_{12}\cos2\theta$，令其为 $0$ 得
+$$\tan2\theta=\frac{2a_{12}}{a_{11}-a_{22}}\qquad(a_{11}\ne a_{22}).$$
+若 $a_{11}=a_{22}$，则 $2\theta=\pi/2$，即 $\theta=\pi/4$。</p>
+<p>旋转后两平方项系数恰为特征根：
+$$a_{11}'=\frac{a_{11}+a_{22}}{2}+\frac{a_{11}-a_{22}}{2}\cos2\theta+a_{12}\sin2\theta=\lambda_1,\quad a_{22}'=\lambda_2 .$$</p>
+</details>
+<p><span class="tag">真题</span> <a class="ref" href="#q-E22-8">E22-8</a>（完整流程：判断类型 → 对称轴 → 顶点 → 标准方程 → 作图）、<a class="ref" href="#q-B24-7b">B24-7b</a>（不变量表达轴长）。</p>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>6.7　二次曲线的切线与极线</h3>
+<div class="tagline"><span class="tag formula">核心</span><span class="tag">真题</span></div>
+<div class="box thm">
+<b>① 已知切点求切线</b>（$P_0$ 在曲线上）：极化公式
+$$a_{11}x_0x+a_{12}(x_0y+xy_0)+a_{22}y_0y+a_1(x+x_0)+a_2(y+y_0)+a_0=0 .$$
+逐项规则：$x^2\to x_0x$，$y^2\to y_0y$，$xy\to\dfrac{x_0y+xy_0}{2}$，$x\to\dfrac{x+x_0}{2}$，$y\to\dfrac{y+y_0}{2}$，$a_0\to a_0$。
+</div>
+<div class="box thm">
+<b>② 过曲线外一点 $P_1$ 求切线</b>（<a class="ref" href="#q-U-4">U-4</a>、<a class="ref" href="#q-B26-7c">B26-7c</a>）
+<br>设切线 $y-y_1=k(x-x_1)$（并单独检验竖直线 $x=x_1$），代入曲线方程，令判别式 $\Delta=0$ 解 $k$。
+<br><b>更稳的判别式法</b>：设切线为 $A(x-x_1)+B(y-y_1)=0$，代入后令 $\Delta=0$，解得 $A:B$。
+</div>
+<div class="box thm">
+<b>③ 极线（切点弦）</b>：点 $P_0(x_0,y_0)$ <b>不在</b>曲线上时，同样的极化公式给出 $P_0$ 的<b>极线</b>：
+<ul>
+<li>$P_0$ 在曲线外 ⟹ 极线是<b>两条切线的切点连线</b>（切点弦）；</li>
+<li>$P_0$ 在曲线内 ⟹ 极线与曲线不相交；</li>
+<li>$P_0$ 在曲线上 ⟹ 极线就是切线。</li>
+</ul>
+</div>
+<div class="box ex">
+<b>判别式的技巧</b>：若曲线含 $xy$ 项，把它看成关于 $x$ 的二次式 $Ax^2+Bx+C=0$（系数含 $k$），$\Delta=B^2-4AC=0$ 得到关于 $k$ 的方程。注意 $k$ 有<b>两个解</b>（两条切线），除非点在曲线上。
+</div>
+</article>
+
+<article class="kp" data-kind="warn">
+<h3>6.8　二次曲线小结与易错点</h3>
+<div class="tagline"><span class="tag warn">避坑</span></div>
+<div class="box warn">
+<ul>
+<li><b>系数 $2$ 的位置</b>：一般式写成 $a_{11}x^2+2a_{12}xy+a_{22}y^2+2a_1x+2a_2y+a_0=0$ 时才有标准的不变量公式。如果题目给的是 $x^2+4xy+3y^2+\dots$，则 $2a_{12}=4\Rightarrow a_{12}=2$，而 $I_2=a_{11}a_{22}-a_{12}^2=1\cdot3-4=-1$（<b>不是</b> $3-16$）。这一步错后面全错。</li>
+<li>平移变换会在方程中引入新的常数项，<b>不变量 $I_1,I_2,I_3$ 不变，但 $K_1$ 会变</b>。</li>
+<li>求对称轴：中心型的轴过<b>中心</b>、沿<b>主方向</b>；抛物型的轴是唯一的那条，需用 6.4 的方法。</li>
+<li>标准方程里"轴"的判定：$X^2$ 对应 $\lambda_1$ 的轴。<b>哪个特征根配哪条轴千万别反</b> —— 反了会把长轴短轴搞反。</li>
+</ul>
+</div>
+</article>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="c7">7　坐标变换与二次曲面化简</h2>
+
+<article class="kp" data-kind="formula">
+<h3>7.1　平移变换</h3>
+<div class="tagline"><span class="tag formula">基础</span></div>
+<p>把原点平移到 $O'(x_0,y_0,z_0)$，坐标轴方向不变。同一点的坐标满足
+$$x=x'+x_0,\quad y=y'+y_0,\quad z=z'+z_0;$$
+即 $x'=x-x_0$ 等（点不动、坐标系动 ⟹ 新坐标 = 旧坐标 − 新原点旧坐标）。</p>
+<div class="box tip">
+<b>用途</b>：消去一次项。<b>移轴到中心</b>是二次曲面化简的第一步。
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>7.2　旋转变换（正交变换）</h3>
+<div class="tagline"><span class="tag formula">核心</span></div>
+<p>转轴：保持原点不动，只转坐标轴方向。矩阵形式
+$$\begin{pmatrix}x\\y\\z\end{pmatrix}=\boldsymbol T\begin{pmatrix}x'\\y'\\z'\end{pmatrix},\qquad
+\boldsymbol T=\begin{pmatrix}t_{11}&t_{12}&t_{13}\\ t_{21}&t_{22}&t_{23}\\ t_{31}&t_{32}&t_{33}\end{pmatrix},$$
+其中 $\boldsymbol T$ 是<b>正交矩阵</b>：$\boldsymbol T^{\mathsf T}\boldsymbol T=\boldsymbol E$，$\det\boldsymbol T=\pm1$（$+1$ 为"正常旋转"，$-1$ 为反射）。</p>
+<div class="box thm">
+<b>正交矩阵的等价刻画</b>：$\boldsymbol T$ 的<b>三个列向量两两正交且都是单位向量</b>（即列向量构成一组标准正交基）。
+<br>这正是"新坐标轴的方向余弦"排成的矩阵。
+</div>
+<p><b>平面内旋转角 $\theta$</b>：
+$$\begin{pmatrix}x\\y\end{pmatrix}=\begin{pmatrix}\cos\theta&-\sin\theta\\ \sin\theta&\cos\theta\end{pmatrix}\begin{pmatrix}x'\\y'\end{pmatrix}.$$</p>
+<p><b>空间中的欧拉角</b>：一般旋转可分解为绕 $z$ 轴、绕新 $x$ 轴、绕新 $z$ 轴的三个旋转（$\psi,\theta,\varphi$）的复合，$\boldsymbol T=\boldsymbol R_z(\psi)\boldsymbol R_x(\theta)\boldsymbol R_z(\varphi)$。</p>
+<div class="box tip">
+<b>用正交变换化简二次型</b>：任何实对称矩阵 $\boldsymbol A$ 都可用正交变换对角化，对角元就是 $\boldsymbol A$ 的<b>特征值</b>，变换矩阵的列向量就是对应的<b>单位特征向量</b>。
+<br>对二次曲面：$\boldsymbol A=\begin{pmatrix}a_{11}&a_{12}&a_{13}\\ a_{12}&a_{22}&a_{23}\\ a_{13}&a_{23}&a_{33}\end{pmatrix}$，解特征方程 $\det(\boldsymbol A-\lambda\boldsymbol E)=0$。
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>7.3　二次曲面的一般理论</h3>
+<div class="tagline"><span class="tag formula">核心</span><span class="tag">真题</span></div>
+<p>一般二次曲面
+$$F(x,y,z)\equiv a_{11}x^2+a_{22}y^2+a_{33}z^2+2a_{12}xy+2a_{13}xz+2a_{23}yz+2a_{14}x+2a_{24}y+2a_{34}z+a_{44}=0 .$$
+记四阶对称矩阵
+$$\boldsymbol A^*=\begin{pmatrix}
+a_{11}&a_{12}&a_{13}&a_{14}\\
+a_{12}&a_{22}&a_{23}&a_{24}\\
+a_{13}&a_{23}&a_{33}&a_{34}\\
+a_{14}&a_{24}&a_{34}&a_{44}
+\end{pmatrix},\qquad
+\boldsymbol A=\begin{pmatrix}a_{11}&a_{12}&a_{13}\\ a_{12}&a_{22}&a_{23}\\ a_{13}&a_{23}&a_{33}\end{pmatrix}.$$</p>
+<div class="box thm">
+<b>四个不变量</b>
+$$
+\begin{aligned}
+I_1&=a_{11}+a_{22}+a_{33} &&\text{（$\boldsymbol A$ 的迹）}\\
+I_2&=\begin{vmatrix}a_{11}&a_{12}\\a_{12}&a_{22}\end{vmatrix}+\begin{vmatrix}a_{11}&a_{13}\\a_{13}&a_{33}\end{vmatrix}+\begin{vmatrix}a_{22}&a_{23}\\a_{23}&a_{33}\end{vmatrix} &&\text{（二阶主子式之和）}\\
+I_3&=\det\boldsymbol A &&\text{（三阶行列式）}\\
+I_4&=\det\boldsymbol A^* &&\text{（四阶行列式）}
+\end{aligned}$$
+<b>另有两个不变量</b>（二阶主子式与 $a_{44}$ 拼接）：
+$$K_2=\begin{vmatrix}a_{22}&a_{24}\\ a_{24}&a_{44}\end{vmatrix}+\begin{vmatrix}a_{33}&a_{34}\\ a_{34}&a_{44}\end{vmatrix},\quad
+K_1=\begin{vmatrix}a_{11}&a_{14}\\ a_{14}&a_{44}\end{vmatrix}+\begin{vmatrix}a_{22}&a_{24}\\ a_{24}&a_{44}\end{vmatrix}+\begin{vmatrix}a_{33}&a_{34}\\ a_{34}&a_{44}\end{vmatrix}.$$
+（$K$ 类只在 $I_3=I_4=0$ 的退化情形用得上。）
+</div>
+<div class="box warn">
+<b>系数陷阱</b>：交叉项 $xy$ 前面的系数必须除以 2 填进 $a_{12}$。题目给 $2xy$ 则 $a_{12}=1$；给 $4xy$ 则 $a_{12}=2$。一次项 $2x$ 同理 $a_{14}=1$。
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>7.4　二次曲面化简完整流程</h3>
+<div class="tagline"><span class="tag formula">大题模板</span><span class="tag">真题</span></div>
+<div class="box thm">
+<b>情形 A：$I_3\ne 0$（中心型：椭球面 / 双曲面 / 锥面）</b>
+<ol>
+<li><b>求唯一中心</b> $(x_0,y_0,z_0)$：解
+$$\begin{cases}a_{11}x+a_{12}y+a_{13}z+a_{14}=0\\ a_{12}x+a_{22}y+a_{23}z+a_{24}=0\\ a_{13}x+a_{23}y+a_{33}z+a_{34}=0\end{cases}$$</li>
+<li><b>移轴</b> $x=x'+x_0,\dots$，一次项全部消失，得
+$$a_{11}x'^2+a_{22}y'^2+a_{33}z'^2+2a_{12}x'y'+2a_{13}x'z'+2a_{23}y'z'+\frac{I_4}{I_3}=0$$
+（常数项 = $F(x_0,y_0,z_0)=\dfrac{I_4}{I_3}$）。</li>
+<li><b>求 $\boldsymbol A$ 的特征值</b> $\lambda_1,\lambda_2,\lambda_3$（解 $\det(\boldsymbol A-\lambda\boldsymbol E)=0$），并求出对应的<b>单位</b>特征向量作为新坐标轴方向。</li>
+<li><b>正交变换</b>使二次项变成 $\lambda_1X^2+\lambda_2Y^2+\lambda_3Z^2$，方程成为
+$$\lambda_1X^2+\lambda_2Y^2+\lambda_3Z^2+\frac{I_4}{I_3}=0 .$$</li>
+<li>两边除以 $-\dfrac{I_4}{I_3}$ 化标准型，读出半轴并与九种标准型比对定名。</li>
+</ol>
+</div>
+<div class="box thm">
+<b>情形 B：$I_3=0,\ I_4\ne 0$（抛物面）</b>
+<ol>
+<li>$\boldsymbol A$ 有零特征值（因为 $\det\boldsymbol A=0$），设 $\lambda_1,\lambda_2\ne0,\ \lambda_3=0$。</li>
+<li>作正交变换，方程化为 $\lambda_1X^2+\lambda_2Y^2+bX+cY+dZ+e=0$ 形（含 $Z$ 的一次项）。</li>
+<li>再作平移（配方）消去 $X,Y$ 的一次项，得 $\lambda_1X'^2+\lambda_2Y'^2=d'Z'$。</li>
+<li>$\lambda_1,\lambda_2$ 同号 ⟹ 椭圆抛物面；异号 ⟹ 双曲抛物面。</li>
+</ol>
+</div>
+<div class="box thm">
+<b>情形 C：$I_3=I_4=0$（柱面及退化情形）</b>
+<ul>
+<li>$I_2\ne0$：柱面。特征值一零两非零，化为 $\lambda_1X^2+\lambda_2Y^2+k=0$，即椭圆柱面 / 双曲柱面 / 一对相交平面；</li>
+<li>$I_2=0$：再用 $K_1,K_2$ 判断抛物柱面、一对平行平面、一条直线、空集等。</li>
+</ul>
+</div>
+<details class="fold">
+<summary>完整例题骨架（<a class="ref" href="#q-B26-10">B26-10</a> 型：要求写出坐标变换的全部过程）</summary>
+<p><b>题</b>：化简 $2x^2+5y^2+5z^2+4xy-4xz-8yz-9=0$。</p>
+<p><b>第 1 步：填系数</b>
+$a_{11}=2,\ a_{22}=5,\ a_{33}=5$；$2xy$ 系数 $4\Rightarrow a_{12}=2$；$2xz$ 系数 $-4\Rightarrow a_{13}=-2$；$2yz$ 系数 $-8\Rightarrow a_{23}=-4$；一次项与常数项只有 $a_{44}=-9$。</p>
+<p><b>第 2 步：算不变量</b>
+$I_1=2+5+5=12$。
+$I_2=\begin{vmatrix}2&2\\2&5\end{vmatrix}+\begin{vmatrix}2&-2\\-2&5\end{vmatrix}+\begin{vmatrix}5&-4\\-4&5\end{vmatrix}=6+6+9=21$。
+$I_3=\det\begin{pmatrix}2&2&-2\\2&5&-4\\-2&-4&5\end{pmatrix}=2(25-16)-2(10-8)-2(-8+10)=18-4-4=10\ne0$。
+$I_4=-9I_3=-90$（因为一次项全缺，$I_4=a_{44}I_3$）。</p>
+<p><b>第 3 步：中心</b>（因为 $I_3\ne0$）：解 $2x+2y-2z=0,\ 2x+5y-4z=0,\ -2x-4y+5z=0$，得 $x_0=y_0=z_0=0$ —— 已是中心，不必移轴。</p>
+<p><b>第 4 步：特征值</b></p>
+<p>$$\det(\boldsymbol A-\lambda\boldsymbol E)=\begin{vmatrix}2-\lambda&2&-2\\2&5-\lambda&-4\\-2&-4&5-\lambda\end{vmatrix}=0$$</p>
+<p>按第一行展开（第 2、3 个余子式恰好相同，可以合并）：
+$$(2-\lambda)\bigl[(5-\lambda)^2-16\bigr]-2\bigl[2(5-\lambda)-8\bigr]-2\bigl[-8+2(5-\lambda)\bigr]=(2-\lambda)(\lambda^2-10\lambda+9)-4(2-2\lambda),$$
+$$=-\lambda^3+12\lambda^2-21\lambda+10=-(\lambda-1)^2(\lambda-10)=0 .$$</p>
+<p>故 $\lambda_1=\lambda_2=1,\ \lambda_3=10$。</p>
+<p><b>自检（必做）</b>：$\lambda_1+\lambda_2+\lambda_3=12=I_1$ ✓；$\lambda_1\lambda_2\lambda_3=10=I_3$ ✓；两两之积之和 $=1+10+10=21=I_2$ ✓。三条全对上，特征值才算算对 —— 这是这类题最有效的自检手段。</p>
+<p><b>第 5 步：单位特征向量</b>（每个 $\lambda_i$ 解 $(\boldsymbol A-\lambda_i\boldsymbol E)\vec v=\vec 0$）</p>
+<p>$\lambda_3=10$：$(\boldsymbol A-10\boldsymbol E)\vec v=\vec 0$ 给出 $-4x+y-z=0$，取 $\vec v_3=(1,2,-2)$，单位化得 $\vec e_3=\frac13(1,2,-2)$。</p>
+<p>$\lambda_1=\lambda_2=1$：$(\boldsymbol A-\boldsymbol E)\vec v=\vec 0$ 只给出<b>一个</b>独立方程 $x+2y-2z=0$ —— 解空间是二维的，对应的两个主方向<b>不唯一</b>，只要在该平面内取一组标准正交基即可。取 $\vec v_1=(0,1,1)$、$\vec v_2=(4,-1,1)$（二者已互相正交，且都与 $\vec v_3$ 正交），单位化
+$$\vec e_1=\frac{1}{\sqrt2}(0,1,1),\qquad \vec e_2=\frac{1}{3\sqrt2}(4,-1,1).$$</p>
+<p>按列排成正交矩阵
+$$\boldsymbol T=\begin{pmatrix}
+0 & \dfrac{4}{3\sqrt2} & \dfrac13\\[6pt]
+\dfrac{1}{\sqrt2} & -\dfrac{1}{3\sqrt2} & \dfrac23\\[6pt]
+\dfrac{1}{\sqrt2} & \dfrac{1}{3\sqrt2} & -\dfrac23
+\end{pmatrix},\qquad \det\boldsymbol T=1\ (\text{正常旋转，非反射}).$$</p>
+<p><b>第 6 步：写出变换与标准型</b>
+$$\begin{pmatrix}x\\y\\z\end{pmatrix}=\boldsymbol T\begin{pmatrix}X\\Y\\Z\end{pmatrix}
+\quad\Longleftrightarrow\quad X=\vec e_1\cdot\vec r,\quad Y=\vec e_2\cdot\vec r,\quad Z=\vec e_3\cdot\vec r .$$
+代入得 $\lambda_1X^2+\lambda_2Y^2+\lambda_3Z^2+\dfrac{I_4}{I_3}=0$。这里一次项全缺，四阶行列式 $I_4=a_{44}I_3=-9\times10=-90$，故 $\dfrac{I_4}{I_3}=-9$：
+$$X^2+Y^2+10Z^2-9=0\quad\Longrightarrow\quad \frac{X^2}{9}+\frac{Y^2}{9}+\frac{Z^2}{9/10}=1 .$$
+三个二次项系数同号、常数项异号 ⟹ <b>椭球面</b>；又 $\lambda_1=\lambda_2=1$ 使两个半轴相等（半轴 $3,\ 3,\ \frac{3}{\sqrt{10}}$）⟹ 具体是<b>旋转椭球面</b>（以 $Z$ 轴为旋转轴）。</p>
+
+<p><b>答题规范</b>：必须写出 ① 系数表 ② 不变量 ③ 中心/特征方程 ④ 每个特征向量（含单位化过程）⑤ 正交矩阵 ⑥ 变换公式 ⑦ 标准方程 ⑧ 曲面名称。</p>
+</details>
+<p><span class="tag">真题</span> <a class="ref" href="#q-U-10">U-10</a>、<a class="ref" href="#q-B26-10">B26-10</a>（都是"化简 + 写变换 + 判类型"）、<a class="ref" href="#q-E24-9">E24-9</a>（先证是柱面再求母线方向与准线）。</p>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>7.5　二次曲面不变量分类表</h3>
+<div class="tagline"><span class="tag formula">必背</span></div>
+<div class="tw"><table>
+<thead><tr><th>条件</th><th>曲面类型</th></tr></thead>
+<tbody>
+<tr><td rowspan="4">$I_4\ne0$<br><small>（非退化）</small></td><td>$I_3>0,\ I_1I_4\lt 0$</td><td><b>椭球面</b></td></tr>
+<tr><td>$I_3>0,\ I_1I_4>0$</td><td>虚椭球面</td></tr>
+<tr><td>$I_3\lt 0,\ I_4\lt 0$</td><td><b>单叶双曲面</b></td></tr>
+<tr><td>$I_3\lt 0,\ I_4>0$</td><td><b>双叶双曲面</b></td></tr>
+<tr><td></td><td>$I_3=0,\ I_4\lt 0$</td><td><b>椭圆抛物面</b></td></tr>
+<tr><td></td><td>$I_3=0,\ I_4>0$</td><td><b>双曲抛物面</b></td></tr>
+<tr><td rowspan="3">$I_4=0$<br><small>（退化）</small></td><td>$I_3\ne0$</td><td><b>二次锥面</b></td></tr>
+<tr><td>$I_3=0,\ I_2>0$</td><td>椭圆柱面（$K$ 判别实/虚）</td></tr>
+<tr><td>$I_3=0,\ I_2\lt 0$</td><td>双曲柱面</td></tr>
+<tr><td></td><td>$I_3=0,\ I_2=0,\ I_1\ne0$</td><td>抛物柱面</td></tr>
+<tr><td></td><td>更退化</td><td>一对平面 / 一条直线 / 一点 / 空集</td></tr>
+</tbody>
+</table></div>
+<div class="box warn">
+<b>用法提醒</b>：先算 $I_4$ 分"非退化/退化"两大支，再看 $I_3$，最后才看 $I_2,I_1$。顺序反了容易乱。
+</div>
+</article>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="c8">8　等距变换与仿射变换</h2>
+
+<article class="kp" data-kind="formula">
+<h3>8.1　等距变换（刚体运动）</h3>
+<div class="tagline"><span class="tag formula">基础</span></div>
+<p>保持任意两点距离不变的变换叫<b>等距变换</b>，其坐标形式为
+$$\begin{pmatrix}x'\\y'\\z'\end{pmatrix}=\boldsymbol T\begin{pmatrix}x\\y\\z\end{pmatrix}+\begin{pmatrix}t_1\\t_2\\t_3\end{pmatrix},\qquad \boldsymbol T^{\mathsf T}\boldsymbol T=\boldsymbol E .$$</p>
+<div class="box thm">
+<b>分解定理</b>：平面等距变换可唯一分解为
+$$\text{平移}\ \circ\ \text{旋转}\quad\text{或}\quad \text{平移}\ \circ\ \text{反射}.$$
+$\det\boldsymbol T=1$ ⟹ <b>第一类</b>（平移、旋转，定向不变）；$\det\boldsymbol T=-1$ ⟹ <b>第二类</b>（反射、滑移反射，定向反转）。
+</div>
+<p><b>不变性质</b>：距离、夹角、面积、平行性、共线性、比值、圆（变成等圆）。</p>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>8.2　仿射变换</h3>
+<div class="tagline"><span class="tag formula">核心</span></div>
+<p>仿射变换的一般形式
+$$\begin{pmatrix}x'\\y'\\z'\end{pmatrix}=\boldsymbol A\begin{pmatrix}x\\y\\z\end{pmatrix}+\begin{pmatrix}t_1\\t_2\\t_3\end{pmatrix},\qquad \det\boldsymbol A\ne0 .$$
+$\boldsymbol A$ 叫<b>线性部分</b>（不必正交），$\vec t$ 叫平移部分。</p>
+<div class="box thm">
+<b>仿射变换的刻画定理</b>：平面上的点变换是仿射变换 $\iff$ 它把<b>直线变成直线</b>（保持共线性）且是<b>一一对应</b>。
+<br><b>更强版本</b>：仿射变换由<b>三对不共线的对应点</b>唯一确定；空间仿射变换由<b>四对不共面的对应点</b>唯一确定。
+</div>
+<div class="box thm">
+<b>仿射变换保持的性质（仿射性质）</b>
+<ul>
+<li>共线性、共面性（直线变直线，平面变平面）；</li>
+<li>平行性（平行直线仍是平行直线）；</li>
+<li><b>共线三点的分比</b>（$AC/CB$ 不变，因此<b>中点变中点</b>）；</li>
+<li>二次曲线的类型（椭圆仍是椭圆，只是轴长和角度会变；直线与曲线的交点个数不变）。</li>
+</ul>
+<b>不保持的性质（度量性质）</b>：长度、角度、面积（面积会按固定倍数缩放）、垂直、圆（会变成椭圆）。
+</div>
+<div class="box tip">
+<b>把图形"简化"的用法</b>：因为仿射变换把椭圆变成圆、把一般三角形变成等腰三角形，所以<b>欲证的只要是仿射性质，就可以先用仿射变换把图形摆到最方便的位置再证</b>。
+<br><b>典型</b>：证任意三角形中线交于一点 ⟶ 先仿射成等边三角形，显然成立 ⟶ 仿射回去。
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>8.3　仿射变换下的面积与比值 ★</h3>
+<div class="tagline"><span class="tag formula">真题方法</span></div>
+<div class="box thm">
+<b>面积变换公式</b>：仿射变换 $x'=\boldsymbol A x+\vec t$ 把区域 $\Omega$ 变成 $\Omega'$，则
+$$S_{\Omega'}=|\det\boldsymbol A|\cdot S_{\Omega}.$$
+即<b>所有面积同比例缩放</b>，这正是"面积比是仿射不变量"的原因。
+</div>
+<div class="box thm">
+<b>多次仿射的面积比</b>：若先把 $\Omega_1,\Omega_2$ 一起变换，则
+$$\frac{S_{\Omega_1'}}{S_{\Omega_2'}}=\frac{S_{\Omega_1}}{S_{\Omega_2}} .$$
+<b>所以面积比可以放心用仿射变换来算。</b>
+</div>
+<div class="box ex">
+<b>经典题：三角形分点面积比</b>（<a class="ref" href="#q-B24-7a">B24-7a</a>）
+<br>在 $\triangle ABC$ 的边 $AB,BC,CA$ 上取 $E,F,G$，使 $AE:AB=\alpha$，$BF:BC=\beta$，$CG:CA=\gamma$。求 $\dfrac{S_{\triangle EFG}}{S_{\triangle ABC}}$。
+<br><b>做法一（面积拆分）</b>：
+$$S_{\triangle EFG}=S_{\triangle ABC}-S_{\triangle AEG}-S_{\triangle BEF}-S_{\triangle CFG}.$$
+而
+$$S_{\triangle AEG}=S_{\triangle ABC}\cdot\frac{AE}{AB}\cdot\frac{AG}{AC}=\alpha(1-\gamma)S_{\triangle ABC},$$
+$$S_{\triangle BEF}=S_{\triangle ABC}\cdot\frac{BE}{BA}\cdot\frac{BF}{BC}=(1-\alpha)\beta\,S_{\triangle ABC},$$
+$$S_{\triangle CFG}=S_{\triangle ABC}\cdot\frac{CF}{CB}\cdot\frac{CG}{CA}=(1-\beta)\gamma\,S_{\triangle ABC}.$$
+（用的是"共角三角形面积比 = 夹边乘积比"。）
+<br>所以
+$$\frac{S_{\triangle EFG}}{S_{\triangle ABC}}=1-\alpha(1-\gamma)-(1-\alpha)\beta-(1-\beta)\gamma .$$
+展开检验：取 $\alpha=\beta=\gamma=1/2$（中点）得 $1-\frac14-\frac14-\frac14=\frac14$，正是中点三角形的面积比 $\frac14$ ✓。
+<br><b>做法二（重心坐标 / 坐标法）</b>：把 $A,B,C$ 仿射变成 $(0,0),(1,0),(0,1)$，则
+$E=(\alpha,0)$，$F=(1-\beta,\beta)$，$G=(0,1-\gamma)$，用行列式算面积比，结果相同。
+</div>
+<div class="box tip">
+<b>"共角三角形面积比"公式</b>：若两三角形有一个角相等（或互补），则
+$$\frac{S_1}{S_2}=\frac{\text{两边之积}_1}{\text{两边之积}_2}.$$
+这是处理这类分点面积比最顺手的工具。
+</div>
+</article>
+
+<article class="kp" data-kind="formula">
+<h3>8.4　仿射坐标系下的坐标与方程</h3>
+<div class="tagline"><span class="tag formula">进阶</span></div>
+<div class="box thm">
+<b>仿射坐标下的直线方程仍是一次方程</b> $Ax+By+C=0$（一般式）；
+<br><b>但距离、夹角、垂直、圆的方程都失去原来的形式</b> —— 例如直角坐标下的圆 $x^2+y^2=R^2$ 在仿射坐标下是椭圆。
+</div>
+<div class="box thm">
+<b>二次曲线在仿射变换下的分类不变</b>：椭圆（含圆）→ 椭圆，双曲线 → 双曲线，抛物线 → 抛物线。
+<br>所以<b>只看"是不是椭圆/双曲线/抛物线"这类问题，可以大胆用仿射变换</b>；但要问"离心率是多少"，就不能用。
+</div>
+<div class="box warn">
+<b>射影几何不在此范围</b>：无穷远元素、齐次坐标下的射影变换、交比、极点极线的一般射影理论本材料<b>不涉及</b>。上面二次曲线的"极线"是以代数（极化公式）方式给出的，不是射影理论的讲法。
+</div>
+</article>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="c9">9　公式速查表</h2>
+
+<div class="kp">
+<h3>9.1　向量</h3>
+<div class="tw"><table>
+<tbody>
+<tr><th>模</th><td>$|\vec a|=\sqrt{x^2+y^2+z^2}$</td></tr>
+<tr><th>数量积</th><td>$\vec a\cdot\vec b=|\vec a||\vec b|\cos\theta=x_1x_2+y_1y_2+z_1z_2$</td></tr>
+<tr><th>夹角余弦</th><td>$\cos\theta=\dfrac{x_1x_2+y_1y_2+z_1z_2}{\sqrt{x_1^2+y_1^2+z_1^2}\sqrt{x_2^2+y_2^2+z_2^2}}$</td></tr>
+<tr><th>投影</th><td>$\operatorname{Prj}_{\vec a}\vec b=\dfrac{\vec a\cdot\vec b}{|\vec a|}$</td></tr>
+<tr><th>向量积</th><td>$\vec a\times\vec b=(y_1z_2-z_1y_2,\ z_1x_2-x_1z_2,\ x_1y_2-y_1x_2)$</td></tr>
+<tr><th>混合积</th><td>$(\vec a,\vec b,\vec c)=\begin{vmatrix}x_1&y_1&z_1\\x_2&y_2&z_2\\x_3&y_3&z_3\end{vmatrix}$</td></tr>
+<tr><th>双重外积</th><td>$(\vec a\times\vec b)\times\vec c=(\vec a\cdot\vec c)\vec b-(\vec b\cdot\vec c)\vec a$</td></tr>
+<tr><th>拉格朗日</th><td>$(\vec a\times\vec b)\cdot(\vec c\times\vec d)=(\vec a\cdot\vec c)(\vec b\cdot\vec d)-(\vec a\cdot\vec d)(\vec b\cdot\vec c)$</td></tr>
+<tr><th>方向余弦</th><td>$\cos^2\alpha+\cos^2\beta+\cos^2\gamma=1$</td></tr>
+</tbody>
+</table></div>
+</div>
+
+<div class="kp">
+<h3>9.2　平面与直线</h3>
+<div class="tw"><table>
+<tbody>
+<tr><th>平面点法式</th><td>$A(x-x_0)+B(y-y_0)+C(z-z_0)=0$</td></tr>
+<tr><th>点到平面距离</th><td>$d=\dfrac{|Ax_0+By_0+Cz_0+D|}{\sqrt{A^2+B^2+C^2}}$</td></tr>
+<tr><th>两平面夹角</th><td>$\cos\theta=\dfrac{|A_1A_2+B_1B_2+C_1C_2|}{\sqrt{A_1^2+B_1^2+C_1^2}\sqrt{A_2^2+B_2^2+C_2^2}}$</td></tr>
+<tr><th>直线标准式</th><td>$\dfrac{x-x_0}{l}=\dfrac{y-y_0}{m}=\dfrac{z-z_0}{n}$</td></tr>
+<tr><th>交面式方向向量</th><td>$\vec s=\vec n_1\times\vec n_2$</td></tr>
+<tr><th>线面夹角</th><td>$\sin\varphi=\dfrac{|Al+Bm+Cn|}{\sqrt{l^2+m^2+n^2}\sqrt{A^2+B^2+C^2}}$</td></tr>
+<tr><th>点到直线距离</th><td>$d=\dfrac{|\overrightarrow{M_1P}\times\vec s|}{|\vec s|}$</td></tr>
+<tr><th>异面直线距离</th><td>$d=\dfrac{|(\overrightarrow{M_1M_2},\vec s_1,\vec s_2)|}{|\vec s_1\times\vec s_2|}$</td></tr>
+<tr><th>公垂线方向</th><td>$\vec s=\vec s_1\times\vec s_2$</td></tr>
+</tbody>
+</table></div>
+</div>
+
+<div class="kp">
+<h3>9.3　二次曲线不变量与化简</h3>
+<div class="tw"><table>
+<tbody>
+<tr><th>不变量</th><td>$I_1=a_{11}+a_{22}$，$I_2=a_{11}a_{22}-a_{12}^2$，$I_3=\det\begin{pmatrix}a_{11}&a_{12}&a_1\\a_{12}&a_{22}&a_2\\a_1&a_2&a_0\end{pmatrix}$</td></tr>
+<tr><th>特征方程</th><td>$\lambda^2-I_1\lambda+I_2=0$</td></tr>
+<tr><th>中心</th><td>$a_{11}x+a_{12}y+a_1=0,\ a_{12}x+a_{22}y+a_2=0$</td></tr>
+<tr><th>中心处值</th><td>$F(x_0,y_0)=\dfrac{I_3}{I_2}$</td></tr>
+<tr><th>标准型</th><td>$\lambda_1X^2+\lambda_2Y^2+\dfrac{I_3}{I_2}=0$</td></tr>
+<tr><th>半轴平方</th><td>$a^2=-\dfrac{I_3}{I_2\lambda_1}$，$b^2=-\dfrac{I_3}{I_2\lambda_2}$，$a^2+b^2=-\dfrac{I_1I_3}{I_2^2}$</td></tr>
+<tr><th>切线（切点 $P_0$）</th><td>$a_{11}x_0x+a_{12}(x_0y+xy_0)+a_{22}y_0y+a_1(x+x_0)+a_2(y+y_0)+a_0=0$</td></tr>
+<tr><th>直径（方向 $X:Y$）</th><td>$(a_{11}x+a_{12}y+a_1)X+(a_{12}x+a_{22}y+a_2)Y=0$</td></tr>
+</tbody>
+</table></div>
+</div>
+
+<div class="kp">
+<h3>9.4　二次曲面不变量与直母线</h3>
+<div class="tw"><table>
+<tbody>
+<tr><th>不变量</th><td>$I_1=\operatorname{tr}\boldsymbol A$，$I_2=\sum$二阶主子式，$I_3=\det\boldsymbol A$，$I_4=\det\boldsymbol A^*$</td></tr>
+<tr><th>中心</th><td>$\boldsymbol A\begin{pmatrix}x\\y\\z\end{pmatrix}=-\begin{pmatrix}a_{14}\\a_{24}\\a_{34}\end{pmatrix}$（$I_3\ne0$ 时唯一）</td></tr>
+<tr><th>中心处值</th><td>$F(x_0,y_0,z_0)=\dfrac{I_4}{I_3}$</td></tr>
+<tr><th>标准型</th><td>$\lambda_1X^2+\lambda_2Y^2+\lambda_3Z^2+\dfrac{I_4}{I_3}=0$</td></tr>
+<tr><th>切平面</th><td>$\vec n=(F_x,F_y,F_z)|_{P_0}$，$\vec n\cdot(\vec r-\vec r_0)=0$</td></tr>
+<tr><th>单叶双曲面族 I</th><td>$\frac xa+\frac zc=\lambda(1+\frac yb),\ \frac xa-\frac zc=\frac1\lambda(1-\frac yb)$</td></tr>
+<tr><th>单叶双曲面族 II</th><td>$\frac xa+\frac zc=\mu(1-\frac yb),\ \frac xa-\frac zc=\frac1\mu(1+\frac yb)$</td></tr>
+<tr><th>双曲抛物面族 I</th><td>$\frac xa+\frac yb=\lambda,\ \frac xa-\frac yb=\frac{2z}{\lambda}$</td></tr>
+<tr><th>双曲抛物面族 II</th><td>$\frac xa+\frac yb=\frac{2z}{\mu},\ \frac xa-\frac yb=\mu$</td></tr>
+</tbody>
+</table></div>
+</div>
+
+<div class="kp">
+<h3>9.5　曲面生成三件套</h3>
+<div class="tw"><table>
+<tbody>
+<tr><th>母线 $\parallel z$ 轴的柱面</th><td>方程缺 $z$：$F(x,y)=0$</td></tr>
+<tr><th>一般柱面母线方向</th><td>$\vec s=\nabla u\times\nabla v$（$u,v$ 是方程的两个"自变量"）</td></tr>
+<tr><th>齐次方程</th><td>以原点为顶点的锥面</td></tr>
+<tr><th>绕 $z$ 轴旋转</th><td>$y\to\pm\sqrt{x^2+y^2}$（$f(y,z)=0\Rightarrow f(\pm\sqrt{x^2+y^2},z)=0$）</td></tr>
+<tr><th>绕 $y$ 轴旋转</th><td>$z\to\pm\sqrt{x^2+z^2}$</td></tr>
+<tr><th>投影柱面（向 $xOy$ 面）</th><td>方程组消去 $z$</td></tr>
+</tbody>
+</table></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 id="c10">10　原题题库（37 题）</h2>
+
+<div class="kp">
+<p><b>来源</b>：用户提供的 <code>解析几何试题</code> 文件夹中的试卷截图。仅摘录能读清的解析几何题；保留原题分值与来源编号。<code>640.webp</code> 缺少试卷标题，记为"未标明来源"。<code>z吉大二一.png</code> 与 <code>吉大二一.png</code> 中第 6–8 题重复，未重复收录。题库不含解答，供抽题训练使用。</p>
+<p><b>筛选原则</b>：收录空间向量、直线和平面、距离、曲线与曲面、二次曲线与二次曲面的化简和判别、切线、直纹面及相关几何证明。纯高等代数题不收录。截图中"分为几问"但没有具体条件的提示不作为可独立作答的题。</p>
+<div class="box warn">
+<b>最终测试留题</b>（完成讲解与针对性训练后的限时测试，训练阶段不提前讲答案）：
+<b>U-10</b>（一般二次曲面化简）、<b>E24-8</b>（动直线生成曲面）、<b>B26-9</b>（绕异面直线旋转的曲面）。若时间允许，再加 <b>J26-8</b>（双曲抛物面直母线）。
+</div>
+</div>
+
+<div class="kp">
+<h3>10.1　索引表</h3>
+<div class="tw"><table>
+<thead><tr><th>专题</th><th>题号</th></tr></thead>
+<tbody>
+<tr><td>向量与仿射几何</td><td>B24-7a, E24-10, J21-6, J25-6</td></tr>
+<tr><td>直线、平面、距离</td><td>B24-8, B25-7a, B25-7b, B25-7c, B26-7a, B26-7b, B26-8, E22-7, E24-8, J21-7, J22-6, J22-7, J26-6</td></tr>
+<tr><td>二次曲线、切线</td><td>U-4, B24-7b, B24-7c, E22-8, B26-7c</td></tr>
+<tr><td>曲面、二次曲面</td><td>U-8, U-9, U-10, B24-7d, B26-7d, B26-9, B26-10, E22-9, E24-9, J21-8, J22-8, J25-7, J25-8, J26-7, J26-8</td></tr>
+</tbody>
+</table></div>
+<div class="chips" id="topicChips">
+  <span class="chip on" data-topic="all">全部 37 题</span>
+  <span class="chip" data-topic="向量与仿射几何">向量与仿射几何</span>
+  <span class="chip" data-topic="直线、平面、距离">直线、平面、距离</span>
+  <span class="chip" data-topic="二次曲线、切线">二次曲线、切线</span>
+  <span class="chip" data-topic="曲面、二次曲面">曲面、二次曲面</span>
+  <span class="chip" id="drawBtn">🎲 随机抽一题</span>
+</div>
+</div>
+
+<div class="srcdiv">未标明来源：640.webp</div>
+
+<article class="q" id="q-U-4" data-topic="二次曲线、切线">
+<div class="qhead"><span class="qid">U-4</span><span class="qtag">切线</span><span class="qscore none">填空，分值未见</span></div>
+<div class="qbody">求曲线 $5x^2+4xy+3y^2-8x-7y-3=0$ 过点 $(1,2)$ 的切线方程。</div>
+</article>
+
+<article class="q" id="q-U-8" data-topic="曲面、二次曲面">
+<div class="qhead"><span class="qid">U-8</span><span class="qtag">双曲面切平面</span><span class="qscore">15 分</span></div>
+<div class="qbody">求单叶双曲面 $\dfrac{x^2}{9}+\dfrac{y^2}{16}-\dfrac{z^2}{4}=1$ 过点 $(3,4,2)$ 的两条直母线方程，并求它们的夹角。</div>
+</article>
+
+<article class="q" id="q-U-9" data-topic="曲面、二次曲面">
+<div class="qhead"><span class="qid">U-9</span><span class="qtag">椭圆柱面截面</span><span class="qscore">15 分</span></div>
+<div class="qbody">求过原点且与椭圆柱面 $\dfrac{x^2}{25}+\dfrac{y^2}{16}=1$ 相交于一个圆周的平面 $\alpha$ 的方程。</div>
+</article>
+
+<article class="q" id="q-U-10" data-topic="曲面、二次曲面">
+<div class="qhead"><span class="qid">U-10</span><span class="qtag">一般二次曲面</span><span class="qscore">15 分</span><span class="tag warn">最终测试留题</span></div>
+<div class="qbody">将 $3x^2+3y^2+5z^2+2xy-2yz-2xz+2x+10y+6z+7=0$ 化简成标准型，写明使用的坐标变换，并说明是什么二次曲面。</div>
+</article>
+
+<div class="srcdiv">北京师范大学 2024 年：北师大二四.png</div>
+
+<article class="q" id="q-B24-7a" data-topic="向量与仿射几何">
+<div class="qhead"><span class="qid">B24-7a</span><span class="qtag">平面仿射几何</span><span class="qscore">5 分</span></div>
+<div class="qbody">在 $\triangle ABC$ 的三边 $AB,BC,CA$ 上分别取三点 $E,F,G$，使得 $AE:AB=\alpha$，$BF:BC=\beta$，$CG:CA=\gamma$，那么 $\triangle EFG$ 与 $\triangle ABC$ 的面积之比为多少？</div>
+</article>
+
+<article class="q" id="q-B24-7b" data-topic="二次曲线、切线">
+<div class="qhead"><span class="qid">B24-7b</span><span class="qtag">二次曲线不变量</span><span class="qscore">5 分</span></div>
+<div class="qbody">设平面二次曲线 $a_{11}x^2+2a_{12}xy+a_{22}y^2+2b_1x+2b_2y+c=0$ 为双曲线，求它的实轴和虚轴长度的平方和用二次曲线的不变量如何表达。</div>
+</article>
+
+<article class="q" id="q-B24-7c" data-topic="二次曲线、切线">
+<div class="qhead"><span class="qid">B24-7c</span><span class="qtag">双曲线渐近线</span><span class="qscore">5 分</span></div>
+<div class="qbody">求双曲线 $3x^2-2y^2+6x+4y=0$ 的渐近线。</div>
+</article>
+
+<article class="q" id="q-B24-7d" data-topic="曲面、二次曲面">
+<div class="qhead"><span class="qid">B24-7d</span><span class="qtag">双曲面直母线</span><span class="qscore">5 分</span></div>
+<div class="qbody">求过点 $(2,3,-4)$ 且落在曲面 $\dfrac{x^2}{4}+\dfrac{y^2}{9}-\dfrac{z^2}{16}=1$ 上的直线的标准方程。</div>
+</article>
+
+<article class="q" id="q-B24-8" data-topic="直线、平面、距离">
+<div class="qhead"><span class="qid">B24-8</span><span class="qtag">公垂线</span><span class="qscore">10 分</span></div>
+<div class="qbody">求过点 $(11,9,0)$，与直线 $\dfrac{x-1}{2}=\dfrac{y+3}{4}=\dfrac{z-5}{3}$ 和直线 $\dfrac{x}{5}=\dfrac{y-2}{-1}=\dfrac{z+1}{2}$ 都相交的直线的标准方程。</div>
+</article>
+
+<div class="srcdiv">北京师范大学 2025 年：beishi25.png</div>
+
+<article class="q" id="q-B25-7a" data-topic="直线、平面、距离">
+<div class="qhead"><span class="qid">B25-7a</span><span class="qtag">向量外积</span><span class="qscore">5 分</span></div>
+<div class="qbody">$v=(-1,1,0)$，$w=(1,1,1)$，求 $v\times\bigl(v\times(v\times(v\times w))\bigr)$。</div>
+</article>
+
+<article class="q" id="q-B25-7b" data-topic="直线、平面、距离">
+<div class="qhead"><span class="qid">B25-7b</span><span class="qtag">异面直线距离</span><span class="qscore">5 分</span></div>
+<div class="qbody">直线 $l_1:\dfrac{x-1}{2}=\dfrac{y+2}{3}=\dfrac{2z-1}{4}$，$l_2:\dfrac{x+2}{-1}=\dfrac{y-2}{-2}=\dfrac{z-\frac12}{0}$，求 $l_1$ 与 $l_2$ 的距离。</div>
+</article>
+
+<article class="q" id="q-B25-7c" data-topic="直线、平面、距离">
+<div class="qhead"><span class="qid">B25-7c</span><span class="qtag">过直线作垂直平面</span><span class="qscore">5 分</span></div>
+<div class="qbody">求过直线 $\begin{cases}x-2y-z+1=0,\\2x+y=0\end{cases}$ 且与平面 $x-y-z+1=0$ 垂直的平面方程。</div>
+</article>
+
+<div class="srcdiv">北京师范大学 2026 年：beishi26.png</div>
+
+<article class="q" id="q-B26-7a" data-topic="直线、平面、距离">
+<div class="qhead"><span class="qid">B26-7a</span><span class="qtag">点关于直线对称</span><span class="qscore">5 分</span></div>
+<div class="qbody">点 $P(2,-1,3)$ 关于直线 $L:\dfrac{x-1}{1}=\dfrac{y}{2}=\dfrac{z+2}{-2}$ 的对称点的坐标。</div>
+</article>
+
+<article class="q" id="q-B26-7b" data-topic="直线、平面、距离">
+<div class="qhead"><span class="qid">B26-7b</span><span class="qtag">两直线距离</span><span class="qscore">5 分</span></div>
+<div class="qbody">直线 $L_1:\dfrac{x-1}{2}=\dfrac{y}{-1}=\dfrac{z+1}{3}$ 与直线 $L_2:\dfrac{x}{1}=\dfrac{y-1}{2}=\dfrac{z-2}{-1}$ 之间的距离。</div>
+</article>
+
+<article class="q" id="q-B26-7c" data-topic="二次曲线、切线">
+<div class="qhead"><span class="qid">B26-7c</span><span class="qtag">平面曲线切线</span><span class="qscore">5 分</span></div>
+<div class="qbody">平面曲线 $3x^2+4xy+5y^2-7x-8y-3=0$ 在点 $(1,1)$ 的切线方程。</div>
+</article>
+
+<article class="q" id="q-B26-7d" data-topic="曲面、二次曲面">
+<div class="qhead"><span class="qid">B26-7d</span><span class="qtag">柱面母线</span><span class="qscore">5 分</span></div>
+<div class="qbody">方程 $f(x+y+z,2x-3y)=0$ 表示空间中的一个柱面，其母线的单位方向向量为何？</div>
+</article>
+
+<article class="q" id="q-B26-8" data-topic="直线、平面、距离">
+<div class="qhead"><span class="qid">B26-8</span><span class="qtag">动直线生成曲面</span><span class="qscore">12 分</span></div>
+<div class="qbody">给定平面 $\Sigma:x+y+1=0$，求平行于 $\Sigma$ 且与直线 $L_1:\dfrac{x-2}{1}=\dfrac{y+3}{2}=\dfrac{z-5}{1}$ 及直线 $L_2:\dfrac{x}{1}=\dfrac{y-2}{2}=\dfrac{z+1}{0}$ 都相交的动直线所形成的曲面方程。</div>
+</article>
+
+<article class="q" id="q-B26-9" data-topic="曲面、二次曲面">
+<div class="qhead"><span class="qid">B26-9</span><span class="qtag">旋转曲面</span><span class="qscore">13 分</span><span class="tag warn">最终测试留题</span></div>
+<div class="qbody">两条异面直线 $L_1:\dfrac{x-1}{2}=\dfrac{y+1}{1}=\dfrac{z-2}{0}$ 与 $L_2:\dfrac{x}{1}=\dfrac{y-2}{-1}=\dfrac{z-1}{2}$。求 $L_2$ 绕 $L_1$ 所得的旋转曲面方程。</div>
+</article>
+
+<article class="q" id="q-B26-10" data-topic="曲面、二次曲面">
+<div class="qhead"><span class="qid">B26-10</span><span class="qtag">一般二次曲面</span><span class="qscore">20 分</span></div>
+<div class="qbody">已知二次曲面方程 $2x^2+5y^2+5z^2+4xy-4xz-8yz-9=0$，使用直角坐标变换将其化为标准方程，并判断该曲面的类型（要求写出所用的坐标变换及得到这一变换的详细过程）。</div>
+</article>
+
+<div class="srcdiv">东北师范大学 2022 年：东师大222.png</div>
+
+<article class="q" id="q-E22-7" data-topic="直线、平面、距离">
+<div class="qhead"><span class="qid">E22-7</span><span class="qtag">空间两直线夹角与平面</span><span class="qscore">15 分</span></div>
+<div class="qbody">在空间直角坐标系下，$l_1,l_2$ 的方程分别为 $l_1:\begin{cases}x-2y-1=0,\\x-y+z-1=0,\end{cases}$ 与 $l_2:\begin{cases}x+z-1=0,\\x-4y-z-1=0.\end{cases}$ (1) 求直线 $l_1$ 与 $l_2$ 所成角的正弦值；(2) 求过 $l_1$ 且平行于 $l_2$ 的平面方程。</div>
+</article>
+
+<article class="q" id="q-E22-8" data-topic="二次曲线、切线">
+<div class="qhead"><span class="qid">E22-8</span><span class="qtag">一般二次曲线</span><span class="qscore">20 分</span></div>
+<div class="qbody">在平面直角坐标系下，二次曲线的方程为 $4x^2+8xy+4y^2+13x+3y+4=0$。(1) 判断该二次曲线的类型，并说明理由；(2) 求该曲线的对称轴方程及顶点坐标；(3) 求该曲线的标准方程，并在原坐标系中作出它的形状。</div>
+</article>
+
+<article class="q" id="q-E22-9" data-topic="曲面、二次曲面">
+<div class="qhead"><span class="qid">E22-9</span><span class="qtag">锥面轨迹证明</span><span class="qscore">15 分</span></div>
+<div class="qbody">已知 $l_1,l_2$ 是两条相互垂直的直线，分别过 $l_1,l_2$ 作动平面 $\alpha,\beta$，使得 $\alpha$ 与 $\beta$ 所成角大小为 $\pi/6$。证明动平面 $\alpha$ 与 $\beta$ 交线轨迹是锥面。</div>
+</article>
+
+<div class="srcdiv">东北师范大学 2024 年：东师大二十四.png</div>
+
+<article class="q" id="q-E24-8" data-topic="直线、平面、距离">
+<div class="qhead"><span class="qid">E24-8</span><span class="qtag">动直线生成曲面</span><span class="qscore">20 分</span><span class="tag warn">最终测试留题</span></div>
+<div class="qbody">设直线 $l_1:\dfrac{x-1}{2}=\dfrac{y}{1}=\dfrac{z}{-1}$，$l_2:\dfrac{x}{2}=\dfrac{y}{1}=\dfrac{z+1}{-2}$ 和平面 $\pi:x+y+z=0$。求与直线 $l_1,l_2$ 相交且平行于 $\pi$ 的所有直线构成的曲面 $S$ 的方程。</div>
+</article>
+
+<article class="q" id="q-E24-9" data-topic="曲面、二次曲面">
+<div class="qhead"><span class="qid">E24-9</span><span class="qtag">柱面及母线</span><span class="qscore">20 分</span></div>
+<div class="qbody">证明方程 $5x^2+5y^2+2z^2-8xy-2xz-2yz+20x+20y-40z-16=0$ 表示的曲面是柱面，并指出此柱面的母线方向及一条准线方程。</div>
+</article>
+
+<article class="q" id="q-E24-10" data-topic="向量与仿射几何">
+<div class="qhead"><span class="qid">E24-10</span><span class="qtag">向量共线判定</span><span class="qscore">10 分</span></div>
+<div class="qbody">证明：$O,A,B$ 不共线，$A\ne B$，则点 $C$ 与点 $A,B$ 共线的充分必要条件是向量 $\overrightarrow{OC}$ 可以分解为向量 $\overrightarrow{OA}$ 和向量 $\overrightarrow{OB}$ 的线性组合，且分解的系数之和为 $1$。</div>
+</article>
+
+<div class="srcdiv">吉林大学 2021 年：吉大二一.png</div>
+
+<article class="q" id="q-J21-6" data-topic="向量与仿射几何">
+<div class="qhead"><span class="qid">J21-6</span><span class="qtag">向量双重外积</span><span class="qscore">15 分</span></div>
+<div class="qbody">设 $a,b,c$ 为空间中的三个向量，证明 $(a\times b)\times c=(a\cdot c)b-(b\cdot c)a$。</div>
+</article>
+
+<article class="q" id="q-J21-7" data-topic="直线、平面、距离">
+<div class="qhead"><span class="qid">J21-7</span><span class="qtag">过直线作平面</span><span class="qscore">15 分</span></div>
+<div class="qbody">求过直线 $l:\begin{cases}4x-y+3z-5=0,\\x-y-z+2=0\end{cases}$ 且平行于 $z$ 轴的平面方程。</div>
+</article>
+
+<article class="q" id="q-J21-8" data-topic="曲面、二次曲面">
+<div class="qhead"><span class="qid">J21-8</span><span class="qtag">单叶双曲面直母线</span><span class="qscore">20 分</span></div>
+<div class="qbody">证明单叶双曲面 $\dfrac{x^2}{a^2}+\dfrac{y^2}{b^2}-\dfrac{z^2}{c^2}=1$ 的异族直母线共面。</div>
+</article>
+
+<div class="srcdiv">吉林大学 2022 年：jida22.png</div>
+
+<article class="q" id="q-J22-6" data-topic="直线、平面、距离">
+<div class="qhead"><span class="qid">J22-6</span><span class="qtag">过点作平行平面</span><span class="qscore">15 分</span></div>
+<div class="qbody">求过 $M(1,1,1)$ 且与 $L_1:\dfrac{x-1}{1}=\dfrac{y}{2}=\dfrac{z}{1}$ 和 $L_2:\begin{cases}x+2y=0,\\y+z+2=0\end{cases}$ 平行的平面方程。</div>
+</article>
+
+<article class="q" id="q-J22-7" data-topic="直线、平面、距离">
+<div class="qhead"><span class="qid">J22-7</span><span class="qtag">等距点轨迹</span><span class="qscore">15 分</span></div>
+<div class="qbody">求空间中到直线 $L:\begin{cases}x+y=1,\\z=0\end{cases}$ 与平面 $\pi:x+y+2z=3$ 距离相等的点的轨迹方程。</div>
+</article>
+
+<article class="q" id="q-J22-8" data-topic="曲面、二次曲面">
+<div class="qhead"><span class="qid">J22-8</span><span class="qtag">双曲面截面证明</span><span class="qscore">20 分</span></div>
+<div class="qbody">证明单叶双曲面 $\dfrac{x^2}{4}+\dfrac{y^2}{4}-\dfrac{z^2}{4}=1$ 的正交直母线交点轨迹是一个圆。</div>
+</article>
+
+<div class="srcdiv">吉林大学 2025 年：jida25.webp</div>
+
+<article class="q" id="q-J25-6" data-topic="向量与仿射几何">
+<div class="qhead"><span class="qid">J25-6</span><span class="qtag">四向量外积恒等式</span><span class="qscore none">分值未单列</span></div>
+<div class="qbody">设 $\alpha,\beta,\gamma,\delta$ 是几何空间中的四个向量，证明 $(\alpha\times\beta)\cdot(\gamma\times\delta)-(\alpha\times\gamma)\cdot(\beta\times\delta)-(\delta\times\alpha)\cdot(\beta\times\gamma)=0$。</div>
+</article>
+
+<article class="q" id="q-J25-7" data-topic="曲面、二次曲面">
+<div class="qhead"><span class="qid">J25-7</span><span class="qtag">双曲抛物面直母线</span><span class="qscore none">分值未单列</span></div>
+<div class="qbody">在空间直角坐标系中，求二次曲面 $x^2+2xy-3y^2=2z$ 上经过点 $(1,-1,-2)$ 的所有直母线的标准方程。</div>
+</article>
+
+<article class="q" id="q-J25-8" data-topic="曲面、二次曲面">
+<div class="qhead"><span class="qid">J25-8</span><span class="qtag">双曲面椭圆截面</span><span class="qscore none">分值未单列</span></div>
+<div class="qbody">在空间直角坐标系中，设单叶双曲面 $S$ 的一个一般方程为 $x^2+\dfrac{y^2}{4}-\dfrac{z^2}{9}=1$。证明存在经过 $y$ 轴的平面，使得该平面与 $S$ 的截线为"长轴长:短轴长 $=\sqrt3$"的椭圆，求出所有满足上述条件的平面（写出平面的一般方程即可）。</div>
+</article>
+
+<div class="srcdiv">吉林大学 2026 年：jida26.webp</div>
+
+<article class="q" id="q-J26-6" data-topic="直线、平面、距离">
+<div class="qhead"><span class="qid">J26-6</span><span class="qtag">两平面垂直交线</span><span class="qscore none">分值未单列</span></div>
+<div class="qbody">在空间直角坐标系下，求平面 $\Pi:x+y+z=2$ 内与直线 $L:\begin{cases}x+2y-2=0,\\x+z-1=0\end{cases}$ 垂直相交的直线的一般方程。</div>
+</article>
+
+<article class="q" id="q-J26-7" data-topic="曲面、二次曲面">
+<div class="qhead"><span class="qid">J26-7</span><span class="qtag">球面交线旋转</span><span class="qscore none">分值未单列</span></div>
+<div class="qbody">设两个球面 $S_1:(x-6)^2+(y-8)^2+z^2=25$，$S_2:(x-10)^2+(y-5)^2+z^2=50$，求曲线 $S_1\cap S_2$ 绕 $z$ 轴旋转得到的曲面的方程。</div>
+</article>
+
+<article class="q" id="q-J26-8" data-topic="曲面、二次曲面">
+<div class="qhead"><span class="qid">J26-8</span><span class="qtag">双曲抛物面直母线</span><span class="qscore none">分值未单列</span><span class="tag warn">最终测试留题</span></div>
+<div class="qbody">双曲抛物面 $S:x^2-4y^2=2z$。(1) 证明对 $S$ 中任意一点，有两条直母线经过它；(2) 求 $S$ 中所有垂直相交的直母线的交点构成的图形的方程。</div>
+</article>
+
+<div class="kp">
+<h3>10.2　排除记录</h3>
+<ul>
+<li><code>北师大二四.png</code>、<code>beishi23.png</code>、<code>beishi25.png</code> 等截图中的纯矩阵、行列式、多项式和抽象二次型题，没有作为解析几何题收录。</li>
+<li><code>beishi23.png</code> 中第七至九题仅给出"计算外积""求曲面切平面""判断二次曲面类型"等题型，没有具体已知条件，无法作为原题训练。</li>
+<li><code>z吉大二一.png</code> 是 <code>吉大二一.png</code> 第 6–8 题的重复裁图。</li>
+<li>截图中的学校、年份与原卷是否一致尚未独立核验；题库按图片标题记录。原图中若存在排版错误，题库保留原样，训练时可再核验。</li>
+</ul>
+</div>
+
+</main>
+</div>
+
+<button id="toTop" title="回到顶部">↑</button>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── 主题 ── */
+  var root = document.documentElement;
+  var themeBtn = document.getElementById('themeBtn');
+  var saved = null;
+  try { saved = localStorage.getItem('jiexi-theme'); } catch (e) {}
+  if (saved) root.setAttribute('data-theme', saved);
+  function syncThemeBtn() {
+    var dark = root.getAttribute('data-theme') === 'dark';
+    themeBtn.textContent = dark ? '☀️ 亮色' : '🌙 暗色';
+  }
+  syncThemeBtn();
+  themeBtn.addEventListener('click', function () {
+    var nxt = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', nxt);
+    try { localStorage.setItem('jiexi-theme', nxt); } catch (e) {}
+    syncThemeBtn();
+  });
+
+  /* ── 打印 ── */
+  document.getElementById('printBtn').addEventListener('click', function () {
+    document.querySelectorAll('details.fold').forEach(function (d) { d.open = true; });
+    window.print();
+  });
+
+  /* ── 展开 / 收起推导 ── */
+  var expandBtn = document.getElementById('expandAll');
+  var expanded = false;
+  expandBtn.addEventListener('click', function () {
+    expanded = !expanded;
+    document.querySelectorAll('details.fold').forEach(function (d) { d.open = expanded; });
+    expandBtn.textContent = expanded ? '收起推导' : '展开推导';
+  });
+
+  /* ── 回到顶部 + 进度条 ── */
+  var toTop = document.getElementById('toTop');
+  var bar = document.getElementById('progress');
+  function onScroll() {
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    var p = h > 0 ? (window.scrollY / h) * 100 : 0;
+    bar.style.width = p.toFixed(2) + '%';
+    toTop.classList.toggle('show', window.scrollY > 500);
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+  toTop.addEventListener('click', function () { window.scrollTo({ top: 0 }); });
+
+  /* ── 专题筛选 ── */
+  var activeTopic = 'all';
+  var chips = Array.prototype.slice.call(document.querySelectorAll('#topicChips .chip'))
+    .filter(function (c) { return c.dataset.topic; });
+
+  function applyTopic() {
+    document.querySelectorAll('.q').forEach(function (q) {
+      var ok = activeTopic === 'all' || q.dataset.topic === activeTopic;
+      if (!ok) { q.classList.add('hidden'); q.dataset.topicHidden = '1'; }
+      else { q.classList.remove('hidden'); delete q.dataset.topicHidden; }
+    });
+    // 来源小标题：该组下题目全被隐藏则隐藏标题
+    document.querySelectorAll('.srcdiv').forEach(function (d) {
+      var n = d.nextElementSibling, any = false;
+      while (n && n.classList && n.classList.contains('q')) {
+        if (!n.dataset.topicHidden) any = true;
+        n = n.nextElementSibling;
+      }
+      d.classList.toggle('hidden', !any);
+    });
+    rerunSearch();
+  }
+
+  chips.forEach(function (c) {
+    c.addEventListener('click', function () {
+      chips.forEach(function (x) { x.classList.remove('on'); });
+      c.classList.add('on');
+      activeTopic = c.dataset.topic;
+      applyTopic();
+    });
+  });
+
+  /* ── 随机抽一题 ── */
+  document.getElementById('drawBtn').addEventListener('click', function () {
+    var pool = Array.prototype.slice.call(document.querySelectorAll('.q'))
+      .filter(function (q) {
+        return activeTopic === 'all' || q.dataset.topic === activeTopic;
+      });
+    if (!pool.length) { alert('这个专题下没有题目。'); return; }
+    var pick = pool[Math.floor(Math.random() * pool.length)];
+    document.getElementById('search').value = '';
+    rerunSearch();
+    document.querySelectorAll('.q').forEach(function (q) { q.classList.remove('drawn'); });
+    pick.classList.add('drawn');
+    pick.style.outline = '3px solid var(--accent)';
+    pick.style.outlineOffset = '3px';
+    setTimeout(function () { pick.style.outline = ''; pick.style.outlineOffset = ''; }, 3500);
+    pick.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    history.replaceState(null, '', '#' + pick.id);
+  });
+
+  /* ── 搜索过滤 ── */
+  var box = document.getElementById('search');
+  var counter = document.getElementById('count');
+  var CHUNKS = Array.prototype.slice.call(document.querySelectorAll('.kp, .q'));
+
+  function rerunSearch() {
+    var q = (box.value || '').trim().toLowerCase();
+    var hits = 0, total = 0;
+    CHUNKS.forEach(function (el) {
+      if (el.classList.contains('q') && el.dataset.topicHidden) { el.classList.add('hidden'); return; }
+      total++;
+      var txt = (el.textContent || '').toLowerCase();
+      var kw = (el.dataset.kw || '').toLowerCase();
+      var id = (el.id || '').toLowerCase();
+      var ok = !q || txt.indexOf(q) >= 0 || kw.indexOf(q) >= 0 || id.indexOf(q) >= 0;
+      el.classList.toggle('hidden', !ok);
+      if (ok) {
+        hits++;
+        if (q) el.querySelectorAll('details').forEach(function (d) { d.open = true; });
+      }
+    });
+    // 空的二级标题（h2 章节）不隐藏，但把纯章节型 kp 也统计进去
+    counter.textContent = q ? (hits + ' / ' + total) : '';
+  }
+
+  var timer = null;
+  box.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(rerunSearch, 120);
+  });
+  box.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { box.value = ''; rerunSearch(); box.blur(); }
+  });
+
+  /* ── 侧栏高亮 ── */
+  var links = Array.prototype.slice.call(document.querySelectorAll('#side a'));
+  var targets = links.map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); });
+  function spy() {
+    var best = -1, y = window.scrollY + 90;
+    targets.forEach(function (t, i) {
+      if (t && t.offsetTop <= y) best = i;
+    });
+    links.forEach(function (a, i) { a.classList.toggle('on', i === best); });
+  }
+  window.addEventListener('scroll', spy, { passive: true });
+  spy();
+
+  /* ── 题库内部跳转：清掉筛选再滚过去 ── */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a.ref');
+    if (!a) return;
+    var href = a.getAttribute('href') || '';
+    if (href.charAt(0) !== '#') return;
+    var target = document.getElementById(href.slice(1));
+    if (!target || !target.classList.contains('q')) return;
+    // 重置所有筛选
+    activeTopic = 'all';
+    chips.forEach(function (x) { x.classList.toggle('on', x.dataset.topic === 'all'); });
+    document.querySelectorAll('.q').forEach(function (q) { q.classList.remove('hidden'); delete q.dataset.topicHidden; });
+    document.querySelectorAll('.srcdiv').forEach(function (d) { d.classList.remove('hidden'); });
+    box.value = '';
+    rerunSearch();
+    e.preventDefault();
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.style.outline = '3px solid var(--accent)';
+    target.style.outlineOffset = '3px';
+    setTimeout(function () { target.style.outline = ''; target.style.outlineOffset = ''; }, 2500);
+    history.replaceState(null, '', href);
+  });
+
+  /* ── 键盘：/ 聚焦搜索 ── */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '/' && document.activeElement !== box &&
+        !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) {
+      e.preventDefault(); box.focus();
+    }
+  });
+
+  /* ── 兜底：MathJax 若 6 秒内仍没渲染出任何公式，提示 ── */
+  setTimeout(function () {
+    if (!document.querySelector('mjx-container')) {
+      var w = document.getElementById('mathwarn');
+      if (w) w.classList.add('show');
+    }
+  }, 6000);
+
+  rerunSearch();
+})();
+</script>
+</body>
+</html>
