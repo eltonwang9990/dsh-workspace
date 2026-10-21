@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepSeek Harness（DSH）架构讲解</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --ink: #1f2733;
+    --ink-soft: #5b6572;
+    --line: #e3e7ec;
+    --accent: #3b6ee0;
+    --accent-soft: #eef3fc;
+    --host: #7c5cbf;
+    --host-soft: #f3eefc;
+    --preset: #1e9e7a;
+    --preset-soft: #e9f7f2;
+    --cli: #c25e2e;
+    --cli-soft: #fbf0e9;
+    --core: #2b6cb0;
+    --core-soft: #e9f2fb;
+    --warn: #b7791f;
+    --code-bg: #f0f2f5;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.75;
+    font-size: 16px;
+  }
+
+  /* ---------- 顶部标题 ---------- */
+  header {
+    background: #171e2b;
+    color: #eef1f6;
+    padding: 44px 0 30px;
+    text-align: center;
+  }
+  header h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: .5px; }
+  header .sub { color: #9aa5b5; font-size: 14px; }
+  header .sub code { color: #c9d4e4; }
+
+  /* ---------- 布局 ---------- */
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px 80px; }
+  .grid { display: grid; grid-template-columns: 220px 1fr; gap: 28px; align-items: start; }
+
+  /* ---------- 目录 ---------- */
+  nav {
+    position: sticky; top: 20px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 14px;
+  }
+  nav .toc-title { font-size: 12px; letter-spacing: 1px; color: var(--ink-soft); text-transform: uppercase; margin-bottom: 8px; }
+  nav a {
+    display: block;
+    color: var(--ink-soft);
+    text-decoration: none;
+    padding: 5px 8px;
+    border-radius: 6px;
+    font-size: 14px;
+    border-left: 2px solid transparent;
+  }
+  nav a:hover { background: var(--code-bg); color: var(--ink); }
+  nav a.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-soft); }
+
+  /* ---------- 章节 ---------- */
+  .content section {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 22px;
+  }
+  section h2 {
+    font-size: 20px;
+    margin: 0 0 4px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  section h2 .num {
+    background: var(--accent); color: #fff;
+    font-size: 13px; width: 26px; height: 26px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 7px; flex-shrink: 0;
+  }
+  .lead { color: var(--ink-soft); margin: 0 0 18px; }
+  section h3 { font-size: 16px; margin: 24px 0 8px; }
+  section p { margin: 10px 0; }
+  section strong { color: var(--ink); }
+
+  /* ---------- 通用组件 ---------- */
+  .pill {
+    display: inline-block; padding: 1px 9px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; vertical-align: 1px;
+  }
+  .pill.cli { background: var(--cli-soft); color: var(--cli); }
+  .pill.host { background: var(--host-soft); color: var(--host); }
+  .pill.preset { background: var(--preset-soft); color: var(--preset); }
+  .pill.core { background: var(--core-soft); color: var(--core); }
+
+  code, pre {
+    font-family: var(--mono);
+  }
+  code {
+    background: var(--code-bg);
+    padding: 1px 6px; border-radius: 4px;
+    font-size: .88em;
+  }
+  pre {
+    background: #171e2b; color: #d6deea;
+    padding: 16px 18px; border-radius: 9px;
+    overflow-x: auto; font-size: 13px; line-height: 1.6;
+    margin: 14px 0;
+  }
+  pre .c { color: #6b7a90; }
+  pre .k { color: #7fb2ff; }
+  pre .s { color: #9fe0a0; }
+
+  .callout {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    padding: 12px 16px; border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+  }
+  .callout .t { font-weight: 700; color: var(--accent); display: block; margin-bottom: 2px; }
+  .callout.warn { border-left-color: var(--warn); background: #fbf5e9; }
+  .callout.warn .t { color: var(--warn); }
+
+  /* ---------- 分层盒图 ---------- */
+  .stack { display: flex; flex-direction: column; gap: 0; margin: 18px 0; }
+  .stack .layer {
+    padding: 13px 18px; border: 1px solid var(--line);
+    border-left: 4px solid var(--core);
+    background: #fbfcfe;
+    font-size: 14px;
+  }
+  .stack .layer b { display: block; font-size: 15px; }
+  .stack .layer span { color: var(--ink-soft); font-size: 13px; }
+  .stack .l-cli { border-left-color: var(--cli); background: var(--cli-soft); }
+  .stack .l-profile { border-left-color: var(--ink-soft); }
+  .stack .l-cordis { border-left-color: var(--core); background: var(--core-soft); }
+
+  /* patch 叠加 */
+  .patch-list { counter-reset: p; list-style: none; padding: 0; margin: 12px 0; }
+  .patch-list li {
+    counter-increment: p; position: relative;
+    padding: 8px 12px 8px 40px; margin: 5px 0;
+    background: var(--code-bg); border-radius: 7px; font-size: 14px;
+  }
+  .patch-list li::before {
+    content: counter(p); position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%);
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    font-size: 12px; display: flex; align-items: center; justify-content: center;
+  }
+  .patch-list li.top::before { background: var(--preset); }
+
+  /* ---------- 表格 ---------- */
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--code-bg); font-weight: 700; }
+  th.h { color: var(--host); }
+  th.p { color: var(--preset); }
+  td .cell-title { font-weight: 700; }
+
+  /* ---------- 示意图 ---------- */
+  .diagram {
+    background: #fbfcfe; border: 1px solid var(--line);
+    border-radius: 9px; padding: 18px; margin: 16px 0;
+    font-family: var(--mono); font-size: 13px; line-height: 1.5;
+    overflow-x: auto; white-space: pre;
+    color: #33405a;
+  }
+
+  .flow { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 14px 0; }
+  .node {
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 8px 14px; font-size: 13px; background: #fff;
+  }
+  .node.host { border-color: var(--host); background: var(--host-soft); color: var(--host); font-weight: 700; }
+  .node.preset { border-color: var(--preset); background: var(--preset-soft); color: var(--preset); font-weight: 700; }
+  .arrow { color: var(--ink-soft); }
+
+  footer {
+    text-align: center; color: var(--ink-soft); font-size: 13px;
+    padding: 30px 0 50px; border-top: 1px solid var(--line);
+  }
+
+  @media (max-width: 820px) {
+    .grid { grid-template-columns: 1fr; }
+    nav { position: static; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>DeepSeek Harness（DSH）架构讲解</h1>
+  <div class="sub">一台以 <code>Cordis</code> 为内核的「可组合代理运行时」——满屏代码，只讲原理与条理</div>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+
+    <nav id="toc">
+      <div class="toc-title">目录</div>
+      <a href="#s0">0 · 一句话定位</a>
+      <a href="#s1">1 · 三层结构</a>
+      <a href="#s2">2 · 配置叠加模型</a>
+      <a href="#s3">3 · 两个平面</a>
+      <a href="#s4">4 · Host 与 Client</a>
+      <a href="#s5">5 · 会话与持久化</a>
+      <a href="#s6">6 · 代理与委托</a>
+      <a href="#s7">7 · 动态插件</a>
+      <a href="#s8">8 · 全景图</a>
+      <a href="#s9">9 · 设计哲学</a>
+    </nav>
+
+    <main class="content">
+
+      <!-- 0 -->
+      <section id="s0">
+        <h2><span class="num">0</span>一句话定位</h2>
+        <p class="lead">先记住三句话，后面所有细节都是它们的展开。</p>
+        <div class="callout">
+          <span class="t">三个根本论断</span>
+          ① <strong>一切能力都是插件</strong> &nbsp;·&nbsp; ② <strong>一切装配都是配置层叠加</strong> &nbsp;·&nbsp; ③ <strong>全局状态归宿主，会话状态归 preset</strong>
+        </div>
+        <p>DSH 不是「一个聊天程序」，而是把 <strong>插件（能力）</strong> 交给 <strong>配置（装配）</strong> 去组合出来的一台运行时代理。你看到的模型、工具、界面、沙箱，没有一样是硬编码的——它们全是插件的实例，靠配置树拼装而成。</p>
+      </section>
+
+      <!-- 1 -->
+      <section id="s1">
+        <h2><span class="num">1</span>三层结构</h2>
+        <p class="lead">从外到内，越往里越「通用」，越往外越「具体」。</p>
+        <div class="stack">
+          <div class="layer l-cli"><b><span class="pill cli">CLI</span> dsh 命令层</b><span>极薄入口：解析自身 flag → 选中 profile → 加载对应 runner。它不理解任何业务。</span></div>
+          <div class="layer l-profile"><b>Profile 层（运行模式）</b><span>web / headless / 自定义。本质是一组 bundle 的 patch 逐层叠加 + 用户覆盖。</span></div>
+          <div class="layer l-cordis"><b><span class="pill core">内核</span> Cordis 运行时</b><span>service / event / plugin / scope / realm。配置树在这里被实例化成插件树。</span></div>
+        </div>
+
+        <h3>关键：CLI 只做「转发」</h3>
+        <p>CLI 只解析自己认识的 flag，遇到第一个不认识的 token 就停手，把后面全部原样交给 profile。所以 <code>dsh --profile web --port 8080</code> 里的 <code>--port</code> 不是 CLI 的，而是 web 应用的。</p>
+
+        <h3>关键：Profile 是「装配清单」，不是代码</h3>
+        <p>一个 profile 目录里放 <code>dsh.profile</code>（按顺序列 bundles）、<code>cordis.patch.yml</code>（用户覆盖层）、<code>package.json</code>（树外插件依赖）。它决定「要装哪些部件、按什么顺序、用哪些参数」——而部件本身（插件）是独立于 profile 存在的。</p>
+      </section>
+
+      <!-- 2 -->
+      <section id="s2">
+        <h2><span class="num">2</span>配置叠加模型</h2>
+        <p class="lead">这是整套系统可扩展性的根源：改行为，靠「盖章」而不是改代码。</p>
+
+        <p>配置树从<strong>空根</strong>开始，每一层 patch 像贴纸一样盖上去。顺序决定优先级：<strong>先解析的在下层打底，后解析的在上层覆盖</strong>。最后贴的最强。</p>
+
+        <ol class="patch-list">
+          <li>dsh.profile.bundles 里每个 bundle 的 patch（按列表顺序）</li>
+          <li>profile 自己的 <code>cordis.patch.yml</code></li>
+          <li>home 级的 <code>$DSH_HOME/cordis.patch.yml</code></li>
+          <li class="top"><code>--patch</code> 命令行覆盖（最外层，最后赢）</li>
+        </ol>
+
+        <div class="callout">
+          <span class="t">这个设计的价值</span>
+          部署方、用户、单次命令行三者都能在不改任何代码的前提下改写行为，且各自的作用域清晰：越靠外的层越「临时」、越「个人」。
+        </div>
+
+        <p>配套有两个只读检查命令：<code>--dump-default-config</code>（看默认组合）和 <code>--dump-config</code>（看最终组合），启动前就能核对配置树长什么样。</p>
+      </section>
+
+      <!-- 3 -->
+      <section id="s3">
+        <h2><span class="num">3</span>两个平面：全图最关键的一笔</h2>
+        <p class="lead">每个能力该放哪，只有两个答案。判断标准不是「功能大小」，而是「所有权」。</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th class="h" style="width:50%">Host 平面（宿主组合）</th>
+              <th class="p">Agent preset 平面（会话组合）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="cell-title">生命周期：</span>进程级，一启动就存在</td>
+              <td><span class="cell-title">生命周期：</span>每个会话挂载</td>
+            </tr>
+            <tr>
+              <td><span class="cell-title">装什么：</span>注册表、持久化、沙箱/审批栈、模型路由</td>
+              <td><span class="cell-title">装什么：</span>工具、人设、prompt 段落</td>
+            </tr>
+            <tr>
+              <td><span class="cell-title">为什么：</span>它们是<b>单例</b>，被所有会话共享，preset 不该拥有</td>
+              <td><span class="cell-title">为什么：</span>它们是<b>每个会话自己</b>的东西，只有 preset 该拥有</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>判定铁律：一个能力放哪里，看它是「注册表」还是「工具」</h3>
+        <p>规则可以压缩成一句话——<strong>凡是服务/注册表级 → host；凡是只有这个 agent 会调用的模型工具 → preset</strong>。具体落到三条判据：</p>
+        <ul>
+          <li><strong>会被跨会话查询</strong>：<code>tools</code>、<code>subagents</code> 注册表要经 api-proxy 暴露给浏览器读取 → 必须 host 单例。</li>
+          <li><strong>进程中只能注册一次</strong>：一个 provider 名字全局唯一，重复注册会抛错 → 必须 host 单例。</li>
+          <li><strong>在会话诞生前就必须解析</strong>：preset 的 inject 在会话存在前无法解析依赖 → 必须 host 单例。</li>
+        </ul>
+        <p>反过来，像 <code>tool-bash</code>、<code>tool-fs</code>、<code>tool-web</code>、<code>tool-todo</code> 这些行，<strong>自己不提供任何东西，只是往宿主注册表里登记一个名字</strong>——它们天然属于 preset。</p>
+
+        <h3>第三类：isolate realm（隔离领域）</h3>
+        <p>当某个服务<strong>既不是宿主单例、又必须被同组多个行共享、且不能被别的 preset 看到</strong>时，用 <code>isolate: {某服务: true}</code> 框成一个「preset 私有的领域实例」。</p>
+        <div class="flow">
+          <div class="node">planMode</div><span class="arrow">→</span><div class="node">compaction</div><span class="arrow">→</span><div class="node">workflowEngine</div>
+        </div>
+
+        <div class="callout">
+          <span class="t">一个正面 / 一个反面案例</span>
+          <strong>正面</strong>：plan 状态天生 per-agent，用 realm 不是 workaround，而是<b>正确</b>的生命周期。<br>
+          <strong>反面</strong>：token-meter 被<em>故意</em>留在 host——因为浏览器要为每个会话读取它，放进 realm 这些单位会随 preset 挂载而时隐时现。
+        </div>
+      </section>
+
+      <!-- 4 -->
+      <section id="s4">
+        <h2><span class="num">4</span>Host 与 Client：两个执行环境</h2>
+        <p class="lead">一个进程在 Node 里，一个在浏览器里，中间只有一条受控的 JSON 通道。</p>
+
+        <table>
+          <thead><tr><th>环境</th><th>跑在哪</th><th>负责什么</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pill host">Host</span></td><td>Node.js 进程</td><td>文件、网络、命令、模型路由、沙箱、审批、持久化</td></tr>
+            <tr><td><span class="pill preset">Client</span></td><td>浏览器页面</td><td>主题、布局、页面状态、工具卡片、Slot UI</td></tr>
+          </tbody>
+        </table>
+
+        <p>二者通信是<strong>单向受控</strong>的：只有 <code>host.call(method, args)</code> 从 Client 调到 Host，且<strong>只允许无损 JSON</strong>跨越。Host 不能反向推给 Client 任意结构。</p>
+
+        <h3>两个横切的守护层</h3>
+        <ul>
+          <li><strong>审批栈（approval stack）</strong>：环绕在需要审批的操作外面。危险写文件、越权命令要先过 answerer；没有 answerer 就 fail-closed（失败即拒）。</li>
+          <li><strong>沙箱（sandbox）</strong>：文件策略的真正执行者。本会话是 <code>workspace-write</code> 模式——只能写 workspace 根目录，越界需单独升级授权。</li>
+        </ul>
+        <p>这两层都属于 <strong>host 平面</strong>，因为它们要守护的是<strong>所有</strong>会话，而不是某一个 agent。</p>
+      </section>
+
+      <!-- 5 -->
+      <section id="s5">
+        <h2><span class="num">5</span>会话与持久化</h2>
+        <p class="lead">会话的生命周期、存储、查询、压缩，全部围绕「按工作目录分组」这一事实。</p>
+
+        <ul>
+          <li><strong>存储分区</strong>：会话按 workspace 根目录分组存储，路径是 <code>~/.dsh/sessions/&lt;工作目录转义&gt;/&lt;session-id&gt;</code>。路径里的中文会被转义成 <code>~xxxx~</code> 形式。</li>
+          <li><strong>持久化链</strong>：<code>session-persistence</code> → <code>jsonl</code> 落盘 → <code>session-query</code>（sqlite）做查询 → <code>projection-cache</code> 加速投影。</li>
+          <li><strong>遥测</strong>：<code>session-telemetry</code> 走 OpenTelemetry（otel），导出日志/指标/追踪。</li>
+        </ul>
+        <p>这些<strong>全是 host 单例</strong>——因为它们是跨会话共享的服务，一个实例服务所有会话。</p>
+
+        <h3>压缩（compaction）——一个 preset 选择</h3>
+        <p>上下文超限时折叠历史：<code>tool-result-pruner</code> 按 <code>threshold / head / tail</code> 裁剪超长工具结果。「要不要压缩」是<strong>每个 agent 的选择</strong>，所以它在 preset 层；但 <code>token-meter</code>（计账器）留在 host，见上一章的反面案例。</p>
+      </section>
+
+      <!-- 6 -->
+      <section id="s6">
+        <h2><span class="num">6</span>代理与委托：代理的代理</h2>
+        <p class="lead">都建立在 host 的 <code>subagents</code> 注册表单例之上，但形态不同。</p>
+
+        <table>
+          <thead><tr><th>机制</th><th>语义</th><th>记忆模型</th></tr></thead>
+          <tbody>
+            <tr><td><span class="cell-title">subagent</span></td><td>普通委托（独立上下文）</td><td>每次独立，不共享对话</td></tr>
+            <tr><td><span class="cell-title">fork</span></td><td>分叉：继承父会话上下文</td><td>复制已完成对话，继续</td></tr>
+            <tr><td><span class="cell-title">workflow</span></td><td>JS 编排脚本把活扇形铺到大量子代理</td><td>带 phases / pipeline / 屏障</td></tr>
+            <tr><td><span class="cell-title">ralph</span></td><td>每轮开全新无记忆子代理循环</td><td>用共享 workspace 做长期记忆</td></tr>
+          </tbody>
+        </table>
+
+        <p>一个精确的归属区分：<code>subagents</code> 注册表和它的 spawn/fork 后端在 <strong>host</strong>（进程单例、被跨会话查询）；但 <code>workflows</code> 引擎在 <strong>preset 私有的 realm</strong>——因为「没有任何 agent 之外的东西读它」，放私有领域反而更干净。</p>
+      </section>
+
+      <!-- 7 -->
+      <section id="s7">
+        <h2><span class="num">7</span>动态插件：运行时临时扩展</h2>
+        <p class="lead">不属于仓库源码，重启即消失。它用「不可变版本」解决「进化 vs 回滚」的老难题。</p>
+
+        <div class="diagram">Plugin（pluginId）   —— 可跨版本演进的「插件实体」
+   └─ Package（packageId）—— 每次改动 = 追加一个<b>不可变</b>源代码快照
+        └─ Run（pluginRunId）—— 一次激活尝试，连着审批 / 加载 / 报错</div>
+
+        <h3>四条设计保证</h3>
+        <ul>
+          <li><strong>代码不可变</strong>：改代码 = 追加新 Package，永不覆盖旧版本 → 天然可回滚。</li>
+          <li><strong>副作用可逆</strong>：所有 service / timer / handler 都挂在当前 Fiber 上，stop / update / undefine 能干净拆除。</li>
+          <li><strong>审批分级</strong>：单勾只授权当前 Package；双勾授权该插件未来所有版本。</li>
+          <li><strong>更新语义</strong>：update 会先停旧 Run 再启新 Package；失败不会自动回滚旧版，需显式 rollback。</li>
+        </ul>
+      </section>
+
+      <!-- 8 -->
+      <section id="s8">
+        <h2><span class="num">8</span>全景图</h2>
+        <p class="lead">把前七节拼成一张图，箭头即依赖，颜色即所有权。</p>
+        <div class="diagram">                      ┌──────────────────────────────┐
+                      │        <span class=pill-cli>dsh CLI</span>            │
+                      │  解析 flag → 选 profile      │
+                      └──────────────┬───────────────┘
+                                     │
+                ┌────────────────────▼────────────────────┐
+                │  Profile（web / headless / 自定义）       │
+                │  = bundles 的 patch 逐层叠加             │
+                │    + cordis.patch.yml + --patch          │
+                └────────────────────┬────────────────────┘
+                                     │ 实例化
+                ┌────────────────────▼────────────────────┐
+                │           Cordis 运行时                  │
+                │                                          │
+                │  ┌──────────────┐   ┌────────────────┐   │
+                │  │  Host 平面    │◄──│  Preset 平面    │   │
+                │  │ 单例/注册表   │RPC│ 工具/人设       │   │
+                │  │ 持久化/沙箱   │   │ isolate realm   │   │
+                │  └──────┬───────┘   └────────────────┘   │
+                │         │ JSON RPC（Client → Host）       │
+                │  ┌──────▼───────┐   ┌────────────────┐   │
+                │  │ Client 平面   │   │ 动态插件        │   │
+                │  │ 主题/UI/Slot  │   │ Plugin→Package │   │
+                │  └──────────────┘   │ →Run（可逆）     │   │
+                └─────────────────────┴────────────────┘   │
+                                                          │
+      代理层：subagent / fork / workflow / ralph            │
+      横切层：compaction / goal / plan / approval / sandbox │</div>
+        <p class="lead" style="font-size:13px; color:var(--ink-soft)">（图中 RPC 是 Client→Host 单向；代理层与横切层是在 Cordis 运行时之上横贯的，不属于某一层。）</p>
+      </section>
+
+      <!-- 9 -->
+      <section id="s9">
+        <h2><span class="num">9</span>设计哲学：三条分离</h2>
+        <p class="lead">把整张地图收束成三对「分离」，它们是所有取舍背后的同一只手。</p>
+        <table>
+          <thead><tr><th>分离</th><th>解决什么</th><th>落在哪</th></tr></thead>
+          <tbody>
+            <tr><td><span class="cell-title">全局 vs 会话</span></td><td>单例不会被某个会话污染，会话状态不污染全局</td><td>host plane vs preset plane</td></tr>
+            <tr><td><span class="cell-title">装配 vs 代码</span></td><td>改行为不改代码，改代码不动装配</td><td>patch 层 vs 插件</td></tr>
+            <tr><td><span class="cell-title">进化 vs 覆盖</span></td><td>版本演进永不破坏既有运行实例</td><td>不可变 Package + 追加版本</td></tr>
+          </tbody>
+        </table>
+        <div class="callout">
+          <span class="t">一句话收尾</span>
+          DSH 之所以既能让部署方统一掌控、又能让每个会话甚至运行时动态地临时扩展而互不污染，靠的就是这三对分离。看懂它们，就看懂了整张地图。
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<footer>DSH 架构讲解 · 单文件 HTML · 轻美工 · 重条理</footer>
+
+<script>
+  // 目录高亮 + 滚动监听（无依赖，轻量）
+  const sections = document.querySelectorAll('.content section');
+  const links = document.querySelectorAll('#toc a');
+  const spy = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.id;
+        links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => spy.observe(s));
+</script>
+
+</body>
+</html>

@@ -1,0 +1,5 @@
+﻿# DSH 本地快照与私密文件，不进仓库
+.dsh/
+.chrome-prof
+node_modules/
+*.log
